@@ -40,3 +40,31 @@ func (u usuarios) Create(usuario models.User) (uint64, error) {
 
 	return uint64(lastID), nil
 }
+
+// traz todos os usuarios que atendem a um filtro de nome ou nick.
+func (u usuarios) GetAll(nameOrNick string) ([]models.User, error) {
+	nameOrNick = fmt.Sprintf("%%%s%%", nameOrNick)
+
+	// vai retornar todos os usuarios que parcialmente forem iguais ao parametro passado para a rota, seja no campo nick, seja no campo name.
+	lines, erro := u.db.Query("select id, nome, nick, email, criadoEm from usuarios where nome like ? or nick like ?", nameOrNick, nameOrNick)
+	
+	if erro != nil {
+		return nil, erro
+	}
+
+	defer lines.Close()
+
+	var users []models.User
+	// mesma logica de cima. vai inicializar uma variavel de slice de users vazia, e depois iterar sobre as linhas retornadas pela query mysql e armazenar na variavel acima cada um dos users que é retornado. para isso, criamos uma var aux no escopo do for que a cada iteração vai receber um novo dado de usuario e depois ser repassado para o slice com o append.
+	for lines.Next() {
+		var user models.User
+
+		if erro = lines.Scan(&user.Id, &user.Nome, &user.Nick, &user.Email, &user.CriadoEm); erro != nil {
+			return nil, erro
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // o controller é o responsável por lidar com as requisições http e criar as respostas para os usuários.
@@ -52,8 +53,27 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusCreated, id)
 }
 
+// busca todos os usuários de acordo com um filtro específico.
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("get all users"))
+	// como sabemos, para capturar o parametro de busca de uma rota, precisamos primeiro capturar ele de forma dinâmica. parra isso, usamos o query string, que em go é feito da maneira abaixo.
+	nameOrNick := strings.ToLower(r.URL.Query().Get("users"))
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	users, erro := repository.GetAll(nameOrNick)
+
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, users)
 }
 
 func GetUSerById(w http.ResponseWriter, r *http.Request) {
