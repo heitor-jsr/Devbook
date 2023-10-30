@@ -4,8 +4,8 @@ import (
 	"api/src/database"
 	"api/src/models"
 	"api/src/repositories"
+	"api/src/responses"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -15,34 +15,34 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	
 	if err != nil {
-		w.Write([]byte("Error reading request body"))
+		responses.Erro(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var usuario models.User
 
 	if err = json.Unmarshal(reqBody, &usuario); err != nil {
-		w.Write([]byte("Error unmarshalling request body"))
+		responses.Erro(w, http.StatusBadRequest, err)
 		return
 	}
 	// não é responsabilidade do controller inserir dados no banco, ou manipular ele. como já foi dito, essa responsabilidade é atribuída ao repository. com ossio, o controller fica responsavel por processar a request, e solicitar a função adeequada do repository para manipular o db.
 	db, err := database.Connect()
 	if err != nil {
-		w.Write([]byte("Error connecting to database"))
+		responses.Erro(w, http.StatusInternalServerError, err)
 		return
 	}
+	defer db.Close()
 
 	// o fluxo é o seguinte: vc abre a conexão com o db, repassa essa conexao para o repositorio, e o metodo do repositorio responsavel por criar um novo usuario é chamado aqui, enviando os dados da request para que o repositorio venha a interagir com o db.
 	repository := repositories.NewUsersRepository(db)
 
 	id, err := repository.Create(usuario)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		responses.Erro(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(fmt.Sprintf("User created with id %d", id)))
+	
+	responses.JSON(w, http.StatusCreated, id)
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {

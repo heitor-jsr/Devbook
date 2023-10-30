@@ -1,0 +1,27 @@
+package responses
+
+import (
+	"net/http"
+	"encoding/json"
+	"log"
+)
+
+// para retornar uma resposta em JSON, usamos a função abaixo. o parametro de dados precisa ser uma interface generica para ser reaproveitada por outras funções.
+func JSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	// esse encode que vai transformar os dados que são passados em json.
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func Erro(w http.ResponseWriter, statusCode int, erro error) {
+	JSON(w, statusCode, struct {
+		Erro string `json:"erro"`
+	}{
+		Erro: erro.Error(),
+	})
+
+}
