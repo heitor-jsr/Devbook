@@ -25,6 +25,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
+
+	// antes mesmo da conexão com o db, devemos verificar se os dados recebidos do usuario sao validos, de acordo com os métodos do struct de users.
+	if erro = usuario.Prepare(); erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
 	// não é responsabilidade do controller inserir dados no banco, ou manipular ele. como já foi dito, essa responsabilidade é atribuída ao repository. com ossio, o controller fica responsavel por processar a request, e solicitar a função adeequada do repository para manipular o db.
 	db, erro := database.Connect()
 	if erro != nil {
