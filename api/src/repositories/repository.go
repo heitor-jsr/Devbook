@@ -16,26 +16,26 @@ func NewUsersRepository(db *sql.DB) *usuarios {
 	return &usuarios{db}
 }
 
-// método create do repositório de usuarios. ele recebe como parametro um modelo de usuarios e retorna um uint64 com o id do usuario inserido e um erro.
+// método create do repositório de usuarios. ele recebe como parametro um modelo de usuarios e retorna um uint64 com o id do usuario inserido e um erroo.
 func (u usuarios) Create(usuario models.User) (uint64, error) {
-	stmt, err := u.db.Prepare("insert into usuarios (nome, nick, email, senha) values(?, ?, ?, ?)")
+	stmt, erro := u.db.Prepare("insert into usuarios (nome, nick, email, senha) values(?, ?, ?, ?)")
 
-	if err != nil {
-		return 0, err
+	if erro != nil {
+		return 0, erro
 	}
 
 	defer stmt.Close()
 
-	res, err := stmt.Exec(usuario.Nome, usuario.Nick, usuario.Email, usuario.Senha)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
+	res, erro := stmt.Exec(usuario.Nome, usuario.Nick, usuario.Email, usuario.Senha)
+	if erro != nil {
+		fmt.Println(erro)
+		return 0, erro
 	}
 
-	lastID, err := res.LastInsertId()
+	lastID, erro := res.LastInsertId()
 
-	if err != nil {
-		return 0, err
+	if erro != nil {
+		return 0, erro
 	}
 
 	return uint64(lastID), nil
