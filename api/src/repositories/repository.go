@@ -68,3 +68,25 @@ func (u usuarios) GetAll(nameOrNick string) ([]models.User, error) {
 
 	return users, nil
 }
+
+func (u usuarios) GetById(id uint64) (models.User, error) {
+	lines, erro := u.db.Query("select id, nome, nick, email, criadoEm from usuarios where id = ?", id)
+
+	// nesse caso, não conseguimos mandar um nil, porque não estamos retornando um slice como acima. por retornamos um models.User, precisamos retornar o seu valor 0, que é o model de user vazio.
+	if erro != nil {
+		return models.User{}, erro
+	}
+
+	defer lines.Close()
+
+	var user models.User
+
+	// a logica é similiar à de cima. só muda que agora não precisamos iterar sobre um slice e vamos simplesmente jogar os valores retornados pela query dentro da variavel acima, se tiver alguma linha a ser lida pelo Next().
+	if lines.Next() {
+		if erro = lines.Scan(&user.Id, &user.Nome, &user.Nick, &user.Email, &user.CriadoEm); erro != nil {
+			return models.User{}, erro
+		}
+	}
+
+	return user, nil
+}

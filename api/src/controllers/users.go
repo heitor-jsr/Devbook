@@ -8,7 +8,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 // o controller é o responsável por lidar com as requisições http e criar as respostas para os usuários.
@@ -77,7 +80,29 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUSerById(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("get user by his id"))
+	params := mux.Vars(r)
+	id, erro := strconv.ParseUint(params["userId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	user, erro := repository.GetById(id)
+
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, user)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
