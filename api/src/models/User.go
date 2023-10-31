@@ -16,8 +16,8 @@ type User struct {
 }
 
 // chama os métodos abaixo, verificando se eles são válidos e, se não, retorna erro. se forem válidos, os dados são formatados e a execução d o código segue.
-func (user *User) Prepare() error {
-	if erro := user.validate(); erro != nil {
+func (user *User) Prepare(step string) error {
+	if erro := user.validate(step); erro != nil {
 		return erro
 	}
 	user.format()
@@ -25,11 +25,11 @@ func (user *User) Prepare() error {
 }
 
 //verifica se todos os campos do struct de user tão preenchidos.
-func (user *User) validate() error {
+func (user *User) validate(step string) error {
 	if user.Nome == "" {
 		return errors.New("o campo nome é obrigatorio")
 	}	
-	if user.Senha == "" {
+	if step == "create" && user.Senha == "" {
 		return errors.New("o campo senha é obrigatorio")
 	}
 	if user.Nick == "" {

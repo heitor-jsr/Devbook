@@ -90,3 +90,18 @@ func (u usuarios) GetById(id uint64) (models.User, error) {
 
 	return user, nil
 }
+
+func (u usuarios) Update(id uint64 , user models.User) error {
+	statemente, erro := u.db.Prepare("update usuarios set nome = ?, nick = ?, email = ? where id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statemente.Close()
+
+	// executa o statemente com os valores a serem alterados na query. lembrando que o prepare é usado para lidar com o sql injection e só é utilizado nos casos em que há manipulação dos dados nas tabelas sql.
+	if _, erro = statemente.Exec(user.Nome, user.Nick, user.Email, id); erro != nil {
+		return erro
+	}
+
+	return nil
+}
