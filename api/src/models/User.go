@@ -1,9 +1,12 @@
 package models
 
 import (
-	"time"
+	"api/src/security"
 	"errors"
 	"strings"
+	"time"
+
+	"github.com/badoux/checkmail"
 )
 
 type User struct {
@@ -20,7 +23,9 @@ func (user *User) Prepare(step string) error {
 	if erro := user.validate(step); erro != nil {
 		return erro
 	}
-	user.format()
+	if erro := user.format(step); erro != nil {
+		return erro
+	}
 	return nil
 }
 
@@ -38,12 +43,25 @@ func (user *User) validate(step string) error {
 	if user.Email == "" {
 		return errors.New("o campo email é obrigatorio")
 	}
+	if erro := checkmail.ValidateFormat(user.Email); erro != nil {
+		return errors.New("o email inserido é invalido")
+	}
 	return nil
 }
 
 // formata os campos do struct para que não exista espaço em branco nas extremidades dos dados inseridos.
-func (user *User) format() {
+func (user *User) format(step string) error {
 	user.Nome = strings.TrimSpace(user.Nome)
 	user.Nick = strings.TrimSpace(user.Nick)
 	user.Email = strings.TrimSpace(user.Email)
+
+	if step == "create" {
+		hashedPassword, erro := security.Hash(user.Senha)
+		if erro != nil {
+			return erro
+		}
+
+		user.Senha = string(hashedPassword)
+	}
+	return nil
 }
