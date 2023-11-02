@@ -11,7 +11,6 @@ type usuarios struct {
 	db *sql.DB
 }
 
-// função que recebe um banco aberto pelo controller como parametro, sendo o controller que chama essa func trambém. a função, por sua vez, pega o banco e joga dentro do struct de usuários que criamos. ou seja, instanciamos o struct com o banco aberto pelo controller.
 func NewUsersRepository(db *sql.DB) *usuarios {
 	return &usuarios{db}
 }
@@ -126,8 +125,6 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 		return models.User{}, erro
 	}
 	defer lines.Close()
-	fmt.Println(lines)
-
 
 	var user models.User
 	if lines.Next() {
@@ -136,7 +133,6 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 			return models.User{}, erro
 		}
 	}
-	fmt.Println(user)
 	return user, nil
 }
 
