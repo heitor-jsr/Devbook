@@ -8,7 +8,7 @@ import (
 	"api/src/responses"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,7 +18,7 @@ import (
 
 // o controller é o responsável por lidar com as requisições http e criar as respostas para os usuários.
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	reqBody, erro := ioutil.ReadAll(r.Body)
+	reqBody, erro := io.ReadAll(r.Body)
 	
 	if erro != nil {
 		responses.Erro(w, http.StatusUnprocessableEntity, erro)
@@ -128,7 +128,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqBody, erro := ioutil.ReadAll(r.Body)
+	reqBody, erro := io.ReadAll(r.Body)
 	if erro != nil {
 		responses.Erro(w, http.StatusUnprocessableEntity, erro)
 		return
