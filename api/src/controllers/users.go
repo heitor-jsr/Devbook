@@ -7,7 +7,7 @@ import (
 	"api/src/repositories"
 	"api/src/responses"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -122,7 +122,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(userIdInToken)
+	// vai bloquear que o usuário que está autorizado com o token gerado para fazer a operação tente realizar uma alteração em usuario que não é seu.
+	if userIdInToken != id {
+		responses.Erro(w, http.StatusForbidden, errors.New("Não é possível atualizar um usuário que não é o seu."))
+		return
+	}
 
 	reqBody, erro := ioutil.ReadAll(r.Body)
 	if erro != nil {
