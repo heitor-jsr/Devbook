@@ -137,3 +137,18 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 
 	return user, nil
 }
+
+func (u usuarios) Follow(userId uint64, followerId uint64) error {
+	// o ignore vai impedir que ocorra erro ao tentar seguir um usuário que já é seguido. ou seja, se vc chamar a mesma rota duas vezes, apontando para um usuario que vc ja segue, o ignore não vai deixar ela ser executada. isso economiza processamento, pq vc n precisa fazer toda uma busca no db pra ver se determinado user ja sergue outro, e ai decidir se deixa ou n sele seguir a pessoa.
+	statement, erro := u.db.Prepare("insert ignore into seguidores (usuario_id, seguidor_id) values (?, ?)")
+	if erro != nil {
+		return erro
+	}
+	defer statement.Close()
+
+	if _, erro = statement.Exec(userId, followerId); erro != nil {
+		return erro
+	}
+
+	return nil
+}

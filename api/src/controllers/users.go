@@ -196,3 +196,39 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	responses.JSON(w, http.StatusNoContent, nil)
 }
+
+func FollowUser(w http.ResponseWriter, r *http.Request) {
+	// nessa rota nós devemos ter o seguinte cuidado: precisamos tanto do Id do seguidor, quanto do seguido. para isso, a lógica é simples: vamos pegar o userId do seguidor do token, e o userId do seguido do parametro da rota.
+	followerId, erro := auth.ExtractUserId(r)
+	if erro != nil {
+		responses.Erro(w, http.StatusUnauthorized, erro)
+		return
+	}
+
+	params := mux.Vars(r)
+	followedId, erro := strconv.ParseUint(params["userId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	if followedId == followerId {
+		responses.Erro(w, http.StatusForbidden, errors.New("Não pode seguir a si mesmo."))
+		return
+	}
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	if erro = repository.Follow(followerId, followedId); erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}
