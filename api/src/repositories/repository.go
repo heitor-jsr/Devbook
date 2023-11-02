@@ -120,3 +120,20 @@ func (u usuarios) Delete(id uint64) error {
 	return nil
 }
 
+func (u usuarios) GetByEmail(email string) (models.User, error) {
+	lines, erro := u.db.Query("select id, senha from usuarios where email = ?", email)
+	if erro != nil {
+		return models.User{}, erro
+	}
+	defer lines.Close()
+
+	var user models.User
+	if lines.Next() {
+		// scanea as linhas retornadas pelo query e armazena nas variaveis auxiliares criadas acima, no endereço de memoria delas.
+		if erro = lines.Scan(&user.Id, &user.Senha); erro != nil {
+			return models.User{}, erro
+		}
+	}
+
+	return user, nil
+}
