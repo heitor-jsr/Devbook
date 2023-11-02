@@ -14,6 +14,7 @@ import (
 var (
 	ConnStr = ""
 	Port = 0
+	SecretKey []byte
 )
 
 // vai carregar as variaveis de ambiente dentro da nossa aplicação. não recebe e nem retorna parametros. ela só vai alterar as variaveis de ambiente criadas antes dela, que vão estar disponíveis para a api toda. basicamente, a função abaixo vai só jogar valores dentro das variaveis de ambiente.
@@ -35,4 +36,6 @@ func Load() {
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
+
+	SecretKey = []byte(os.Getenv("SECRET_KEY"))
 }
