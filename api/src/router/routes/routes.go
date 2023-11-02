@@ -3,7 +3,9 @@
 package routes
 
 import (
+	"api/src/middlewares"
 	"net/http"
+
 	"github.com/gorilla/mux"
 )
 
@@ -22,7 +24,16 @@ func Config(r *mux.Router) *mux.Router{
 	// para lidar com o slice de rotas que criamos no package de routes, precisa de um for para cada item do slice. com isso, vamos percorrer cada rota, dando o handleFunc em cima das funções responsáveis por cada uma das rotas. esse é o motivo de termos criado um struct e um slice dele para armazenar as rotas.
 
 	for _, route := range routes {
-		r.HandleFunc(route.URI, route.Func).Methods(route.Method)
+		// se a rota em questão requerer a autenticação, vai ser chamado o middlewares. se a rota em questão não requer a autenticação, vai ser chamado o handleFunc.
+		// a primeira coisa que fazemos é passar uma função com a mesma assinatura que o middleware exige para ele ser chamado. ao ser chamada essa função que é passada como parametro para o middleware, ele se encarrega de autenticar o usuario e, se tudo estiver correto, chamar o metodo da rota e continuar a execução do código. senão, vai retornar um erro de autenticação.
+		if route.RequireAuth {
+			r.HandleFunc(route.URI, 
+				middlewares.Logger(
+					middlewares.Authentication(route.Func))).Methods(route.Method)
+			continue
+		} else {
+			r.HandleFunc(route.URI, middlewares.Authentication(route.Func)).Methods(route.Method)
+		}
 	}
 
 	// o nosso r (router) entrou na função sem nenhuma rota, e é retornado com todas as rotas configuradas.
