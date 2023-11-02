@@ -28,8 +28,6 @@ func main() {
 	// para carregar os arquivos .env, basta executarmos a função load. para ter certeza que tudo deu certo, precisamos apenas dar um log na porta. por fim, para dar o listen and serve na porta do .env, basta executar o seguinte comando:
 	config.Load()
 
-	fmt.Println(config.SecretKey)
-
 	fmt.Printf("API is running on port %d", config.Port)
 
 	r := router.Generator()

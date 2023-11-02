@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 // a lógica do login é a seguinte: recebemos uma req com email e senha, verificamos se o usuario existe, se existe, verificamos se a senha comparada com o hash que tá no db é a correta e, se tudo estiver correto, retornamos um token de acesso. com isso o usuário estará logado no sistema.
@@ -53,5 +54,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
 	}
-	w.Write([]byte(token))
+	usuarioID := strconv.FormatUint(userFromDB.Id, 10)
+
+	responses.JSON(w, http.StatusOK, models.AuthenticationData{ID: usuarioID, Token: token})
 }
