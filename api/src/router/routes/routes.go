@@ -32,7 +32,7 @@ func Config(r *mux.Router) *mux.Router{
 					middlewares.Authentication(route.Func))).Methods(route.Method)
 			continue
 		} else {
-			r.HandleFunc(route.URI, middlewares.Authentication(route.Func)).Methods(route.Method)
+			r.HandleFunc(route.URI, middlewares.Logger(route.Func)).Methods(route.Method)
 		}
 	}
 
