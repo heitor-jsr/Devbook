@@ -126,6 +126,8 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 		return models.User{}, erro
 	}
 	defer lines.Close()
+	fmt.Println(lines)
+
 
 	var user models.User
 	if lines.Next() {
@@ -134,7 +136,7 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 			return models.User{}, erro
 		}
 	}
-
+	fmt.Println(user)
 	return user, nil
 }
 

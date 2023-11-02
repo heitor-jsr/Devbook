@@ -8,22 +8,17 @@ import (
 	"api/src/responses"
 	"api/src/security"
 	"encoding/json"
-	"io"
+
+	// "io"
 	"net/http"
 	"strconv"
 )
 
 // a lógica do login é a seguinte: recebemos uma req com email e senha, verificamos se o usuario existe, se existe, verificamos se a senha comparada com o hash que tá no db é a correta e, se tudo estiver correto, retornamos um token de acesso. com isso o usuário estará logado no sistema.
 func Login(w http.ResponseWriter, r *http.Request) {
-	body, erro := io.ReadAll(r.Body)
-	if erro != nil {
-		responses.Erro(w, http.StatusUnprocessableEntity, erro)
-		return
-	}
-
-	// pelo fato de ser uma rota que utiliza o post, a rota de login vai precisar dar o unmarshal nos dados do corpo da req e jgoar na variavel auxiliar, como todas as outras.
+	// pelo fato de ser uma rota que utiliza o post, a rota de login vai precisar dar o unmarshal nos dados do corpo da req e jgoar na variavel auxiliar, como todas as outras. alteramos o unmarshal para newdecoder, pois ele tem um gerenciamento de memoria mais eficaz.
 	var user models.User
-	if erro = json.Unmarshal(body, &user); erro != nil {
+	if erro := json.NewDecoder(r.Body).Decode(&user); erro != nil {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}

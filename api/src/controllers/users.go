@@ -8,7 +8,6 @@ import (
 	"api/src/responses"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,22 +17,14 @@ import (
 
 // o controller é o responsável por lidar com as requisições http e criar as respostas para os usuários.
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	reqBody, erro := io.ReadAll(r.Body)
-	
-	if erro != nil {
-		responses.Erro(w, http.StatusUnprocessableEntity, erro)
-		return
-	}
-
-	var usuario models.User
-
-	if erro = json.Unmarshal(reqBody, &usuario); erro != nil {
+	var user models.User
+	if erro := json.NewDecoder(r.Body).Decode(&user); erro != nil {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
 
 	// antes mesmo da conexão com o db, devemos verificar se os dados recebidos do usuario sao validos, de acordo com os métodos do struct de users.
-	if erro = usuario.Prepare("create"); erro != nil {
+	if erro := user.Prepare("create"); erro != nil {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
@@ -49,7 +40,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// o fluxo é o seguinte: vc abre a conexão com o db, repassa essa conexao para o repositorio, e o metodo do repositorio responsavel por criar um novo usuario é chamado aqui, enviando os dados da request para que o repositorio venha a interagir com o db.
 	repository := repositories.NewUsersRepository(db)
 
-	id, erro := repository.Create(usuario)
+	id, erro := repository.Create(user)
 	if erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -128,14 +119,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqBody, erro := io.ReadAll(r.Body)
-	if erro != nil {
-		responses.Erro(w, http.StatusUnprocessableEntity, erro)
-		return
-	}
-
 	var user models.User
-	if erro = json.Unmarshal(reqBody, &user); erro != nil {
+	if erro := json.NewDecoder(r.Body).Decode(&user); erro != nil {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
