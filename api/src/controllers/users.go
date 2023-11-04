@@ -6,6 +6,7 @@ import (
 	"api/src/models"
 	"api/src/repositories"
 	"api/src/responses"
+	"api/src/security"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -306,4 +307,66 @@ func GetFollowings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.JSON(w, http.StatusOK, following)
+}
+
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userIdFromToken, erro := auth.ExtractUserId(r)
+	if erro != nil {
+		responses.Erro(w, http.StatusUnauthorized, erro)
+		return
+	}
+
+	params := mux.Vars(r)
+	userIdFromParams, erro := strconv.ParseUint(params["userId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	if userIdFromToken != userIdFromParams {
+		responses.Erro(w, http.StatusForbidden, errors.New("Não é possível alterar a senha de um usuário que não é o seu."))
+		return
+	}
+
+	var password models.Password
+	if erro := json.NewDecoder(r.Body).Decode(&password); erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	// antes de alterar a senha, é indispensável que seja verificada se a senha atual que está sendo passada bate com a senha salva no db.
+	repository := repositories.NewUsersRepository(db)
+	passwordFromDb, erro := repository.GetPasswordFromDb(userIdFromToken)
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	// a senha que nos é retornada do banco está com hash. por isso, precisamos comparar a senha hasheada com a senha que o usuario passou na requisição e ver se seus valores batem.
+	if erro := security.VerifyPassword(passwordFromDb, password.Current); erro != nil {
+		responses.Erro(w, http.StatusUnauthorized, errors.New("Senha atual inválida."))
+		return
+	}
+
+	// se a senha do db e a atual q é passada na req forem iguais, precisamos, antes de salvar a nova senha no db, passar um hash pra ela.
+	hashedPassowrd, erro := security.Hash(password.New)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	// salva a nova senha no db
+	if erro = repository.ChangePassword(userIdFromToken, string(hashedPassowrd)); erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
 }

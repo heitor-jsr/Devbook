@@ -221,3 +221,37 @@ func (u usuarios) GetFollowing(userId uint64) ([]models.User, error) {
 
 	return users, nil
 }
+
+func (u usuarios) GetPasswordFromDb(userId uint64) (string, error) {
+	lines, erro := u.db.Query("select senha from usuarios where id = ?", userId)
+	if erro != nil {
+		return "", erro
+	}
+
+	defer lines.Close()
+
+	var user models.User
+	// para dar o scan, eu preciso instanciar um novo usuario.
+	if lines.Next() {
+		if erro = lines.Scan(&user.Senha); erro != nil {
+			return "", erro
+		}
+	}
+
+	return user.Senha, nil
+}
+
+func (u usuarios) ChangePassword(userId uint64, newPassword string) error {
+	statement, erro := u.db.Prepare("update usuarios set senha = ? where id = ?")
+	if erro != nil {
+		return erro
+	}
+
+	defer statement.Close()
+
+	if _, erro = statement.Exec(newPassword, userId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
