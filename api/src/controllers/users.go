@@ -253,3 +253,30 @@ func UnfollowUser(w http.ResponseWriter, r *http.Request) {
 
 	responses.JSON(w, http.StatusNoContent, nil)
 }
+
+func GetFollowers(w http.ResponseWriter, r *http.Request) {
+	// não vamos pegar o id do token pq nós queremos permitir que um usuario busque os seguidores de outro usuario. por isso, vamos utilizar o id que vem na rota.
+	params := mux.Vars(r)
+	id, erro := strconv.ParseUint(params["userId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+
+	followers, erro := repository.GetFollowers(id)
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, followers)
+}

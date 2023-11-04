@@ -136,22 +136,22 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 	return user, nil
 }
 
-func (u usuarios) Follow(userId uint64, followerId uint64) error {
+func (u usuarios) Follow(followedId uint64, followerId uint64) error {
 	// o ignore vai impedir que ocorra erro ao tentar seguir um usuário que já é seguido. ou seja, se vc chamar a mesma rota duas vezes, apontando para um usuario que vc ja segue, o ignore não vai deixar ela ser executada. isso economiza processamento, pq vc n precisa fazer toda uma busca no db pra ver se determinado user ja sergue outro, e ai decidir se deixa ou n sele seguir a pessoa.
 	statement, erro := u.db.Prepare("insert ignore into seguidores (usuario_id, seguidor_id) values (?, ?)")
 	if erro != nil {
 		return erro
 	}
 	defer statement.Close()
-
-	if _, erro = statement.Exec(userId, followerId); erro != nil {
+	// QUEM SEGUE É O USER DO TOKEN, E QUEM É SEGUIDO É O USER DA ROTA. ususario_id === seguido.
+	if _, erro = statement.Exec(followerId, followedId); erro != nil {
 		return erro
 	}
 
 	return nil
 }
 
-func (u usuarios) Unfollow(userId uint64, followerId uint64) error {
+func (u usuarios) Unfollow(followedId uint64, followerId uint64) error {
 	// vai deletar a linha do DB que tem o usuario_id e o seguidor_id como seus dados.
 	statement, erro := u.db.Prepare("delete from seguidores where usuario_id = ? and seguidor_id = ?")
 	if erro != nil {
@@ -159,9 +159,38 @@ func (u usuarios) Unfollow(userId uint64, followerId uint64) error {
 	}
 	defer statement.Close()
 
-	if _, erro = statement.Exec(userId, followerId); erro != nil {
+	if _, erro = statement.Exec(followerId, followedId); erro != nil {
 		return erro
 	}
 
 	return nil
+}
+
+func (u usuarios) GetFollowers(userId uint64) ([]models.User, error) {
+	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u 
+	inner join seguidores s on u.id = s.seguidor_id where s.usuario_id = ?`, userId)
+
+	if erro != nil {
+		return nil, erro
+	}
+
+	defer lines.Close()
+
+	var users []models.User
+	for lines.Next() {
+		var user models.User
+
+		if erro = lines.Scan(
+			&user.Id,
+			&user.Nome,
+			&user.Nick,
+			&user.Email,
+			&user.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }
