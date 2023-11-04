@@ -150,3 +150,18 @@ func (u usuarios) Follow(userId uint64, followerId uint64) error {
 
 	return nil
 }
+
+func (u usuarios) Unfollow(userId uint64, followerId uint64) error {
+	// vai deletar a linha do DB que tem o usuario_id e o seguidor_id como seus dados.
+	statement, erro := u.db.Prepare("delete from seguidores where usuario_id = ? and seguidor_id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statement.Close()
+
+	if _, erro = statement.Exec(userId, followerId); erro != nil {
+		return erro
+	}
+
+	return nil
+}

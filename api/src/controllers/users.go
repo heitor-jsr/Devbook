@@ -217,3 +217,39 @@ func FollowUser(w http.ResponseWriter, r *http.Request) {
 
 	responses.JSON(w, http.StatusNoContent, nil)
 }
+
+func UnfollowUser(w http.ResponseWriter, r *http.Request) {
+	// aqui precisamos dos dois ids, como na rota anterior. para isso, aplicamos a mesma lógica. relemebre que o id do token é o usuario que realiza para realizar a operação. é, portanto, o seguidor. o id do seguido é o que o usuario passa na rota.
+	followerId, erro := auth.ExtractUserId(r)
+	if erro != nil {
+		responses.Erro(w, http.StatusUnauthorized, erro)
+		return
+	}
+
+	params := mux.Vars(r)
+	followedId, erro := strconv.ParseUint(params["userId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	if followedId == followerId {
+		responses.Erro(w, http.StatusForbidden, errors.New("Não pode deixar de seguir a si mesmo."))
+		return
+	}
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	if erro = repository.Unfollow(followerId, followedId); erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}
