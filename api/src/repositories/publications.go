@@ -120,3 +120,20 @@ func (publications *publications) Update(publicationId uint64, pupublication mod
 
 	return nil
 }
+
+func (publications *publications) Delete(publicationId uint64) (error) { 
+	statement, erro := publications.db.Prepare(
+		"delete from publicacoes where id = ?",
+	)
+	if erro != nil {
+		return erro
+	}
+
+	defer statement.Close()
+
+	if _, erro = statement.Exec(publicationId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
