@@ -21,6 +21,7 @@ type Route struct {
 func Config(r *mux.Router) *mux.Router{
 	routes := usersRoutes
 	routes = append(routes, loginRoute)
+	routes = append(routes, publicationsRoutes...)
 	// para lidar com o slice de rotas que criamos no package de routes, precisa de um for para cada item do slice. com isso, vamos percorrer cada rota, dando o handleFunc em cima das funções responsáveis por cada uma das rotas. esse é o motivo de termos criado um struct e um slice dele para armazenar as rotas.
 
 	for _, route := range routes {

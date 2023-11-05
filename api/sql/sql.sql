@@ -4,6 +4,7 @@ USE devbook;
 
 DROP TABLE IF EXISTS usuarios;
 DROP TABLE IF EXISTS seguidores;
+DROP TABLE IF EXISTS publicacoes;
 
 CREATE TABLE usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
