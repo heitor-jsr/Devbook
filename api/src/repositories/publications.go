@@ -188,3 +188,20 @@ func (publications *publications) LikePublication(publicationId uint64) (error) 
 
 	return nil
 }
+
+func (publications *publications) DeslikePublication(publicationId uint64) (error) {
+	statement, erro := publications.db.Prepare(
+		"update publicacoes set curtidas = case when curtidas > 0 then curtidas - 1 else curtidas end where id = ?",
+	)
+	if erro != nil {
+		return erro
+	}
+
+	defer statement.Close()
+
+	if _, erro = statement.Exec(publicationId); erro != nil {
+		return erro
+	}
+
+	return nil
+}

@@ -13,3 +13,5 @@ require github.com/badoux/checkmail v1.2.1
 require golang.org/x/crypto v0.14.0
 
 require github.com/dgrijalva/jwt-go v3.2.0+incompatible
+
+require gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
