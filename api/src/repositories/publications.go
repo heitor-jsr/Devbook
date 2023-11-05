@@ -137,3 +137,37 @@ func (publications *publications) Delete(publicationId uint64) (error) {
 
 	return nil
 }
+
+func (publications *publications) GetPublicationFromUser(userId uint64) ([]models.Publication, error) {
+	lines, erro := publications.db.Query(`
+	select p.*, u.nick from publicacoes p
+	inner join usuarios u on u.id = p.autor_id
+	where p.autor_id = ?
+	order by 1 desc`,
+		userId,
+	)
+	if erro != nil {
+		return nil, erro
+	}
+
+	defer lines.Close()
+
+	var newPublications []models.Publication
+	for lines.Next() {
+		var publication models.Publication
+		if erro = lines.Scan(
+			&publication.Id,
+			&publication.Title,
+			&publication.Content,
+			&publication.AuthorId,
+			&publication.Likes,
+			&publication.CriadaEm,
+			&publication.AuthorNick,
+		); erro != nil {
+			return nil, erro
+		}
+		newPublications = append(newPublications, publication)
+	}
+
+	return newPublications, nil
+}

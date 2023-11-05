@@ -198,4 +198,28 @@ func DeletePublication(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusNoContent, nil)
 }
 
+func GetPublicationFromUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userId, erro := strconv.ParseUint(params["userId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
 
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+	}
+
+	defer db.Close()
+
+	repository := repositories.NewPublicationRepository(db)
+	publications, erro := repository.GetPublicationFromUser(userId)
+
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, publications)
+}
