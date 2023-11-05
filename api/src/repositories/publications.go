@@ -67,3 +67,40 @@ func (publications *publications) GetPublicationById(publicationId uint64) (mode
 
 	return publication, nil
 }
+
+// vai retornar todas as publicações dos usuários que ele segue e todas as publicações pŕoprias dele.
+func (publications *publications) GetPublications(usuarioID uint64) ([]models.Publication, error) { 
+	lines, erro := publications.db.Query(`
+	select distinct p.*, u.nick from publicacoes p 
+	inner join usuarios u on u.id = p.autor_id 
+	inner join seguidores s on p.autor_id = s.usuario_id 
+	where u.id = ? or s.seguidor_id = ?
+	order by 1 desc`,
+		usuarioID, usuarioID,
+	)
+
+	if erro != nil {
+		return nil, erro
+	}
+
+	defer lines.Close()
+
+	var newPublications []models.Publication
+	for lines.Next() {
+		var publication models.Publication
+		if erro = lines.Scan(
+			&publication.Id,
+			&publication.Title,
+			&publication.Content,
+			&publication.AuthorId,
+			&publication.Likes,
+			&publication.CriadaEm,
+			&publication.AuthorNick,
+		); erro != nil {
+			return nil, erro
+		}
+		newPublications = append(newPublications, publication)
+	}
+
+	return newPublications, nil
+}
