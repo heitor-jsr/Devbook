@@ -223,3 +223,27 @@ func GetPublicationFromUser(w http.ResponseWriter, r *http.Request) {
 
 	responses.JSON(w, http.StatusOK, publications)
 }
+
+func LikePublication(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	publicationId, erro := strconv.ParseUint(params["publicationId"], 10, 64)
+	if erro != nil {
+		responses.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	db, erro := database.Connect()
+	if erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+	}
+
+	defer db.Close()
+
+	repository := repositories.NewPublicationRepository(db)
+	if erro = repository.LikePublication(publicationId); erro != nil {
+		responses.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}

@@ -171,3 +171,20 @@ func (publications *publications) GetPublicationFromUser(userId uint64) ([]model
 
 	return newPublications, nil
 }
+
+func (publications *publications) LikePublication(publicationId uint64) (error) {
+	statement, erro := publications.db.Prepare(
+		"update publicacoes set curtidas = curtidas + 1 where id = ?",
+	)
+	if erro != nil {
+		return erro
+	}
+
+	defer statement.Close()
+
+	if _, erro = statement.Exec(publicationId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
