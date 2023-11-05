@@ -104,3 +104,19 @@ func (publications *publications) GetPublications(usuarioID uint64) ([]models.Pu
 
 	return newPublications, nil
 }
+
+func (publications *publications) Update(publicationId uint64, pupublication models.Publication) (error) { 
+	statement, erro := publications.db.Prepare(
+		"update publicacoes set titulo = ?, conteudo = ? where id = ?")
+	if erro != nil {
+		return erro
+	}
+
+	defer statement.Close()
+
+	if _, erro = statement.Exec(pupublication.Title, pupublication.Content, publicationId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
