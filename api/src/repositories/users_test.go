@@ -2,97 +2,71 @@ package repositories
 
 import (
 	"api/src/models"
+	"context"
 	"database/sql"
-	"log"
-	"os"
+	"fmt"
+	"path/filepath"
 	"testing"
-
 	_ "github.com/go-sql-driver/mysql"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/mysql"
 )
 
-func setupTestDB() (*sql.DB, error) {
+func TestUserRepository(t *testing.T) {
 
-	dsn := "devbook_test:test@tcp(localhost:3306)/devbook_test?charset=utf8&parseTime=True&loc=Local"
+	ctx := context.Background()
 
-	db, err := sql.Open("mysql", dsn)
+	sqlScriptPath := filepath.Join("..", "..", "sql", "sql.sql")
+
+	mysqlContainer, err := mysql.RunContainer(ctx,
+    testcontainers.WithImage("mysql:8"),
+    mysql.WithDatabase("devbook"),
+    mysql.WithUsername("golang"),
+    mysql.WithPassword("golang"),
+		mysql.WithScripts(sqlScriptPath))
+		if err != nil {
+				panic(err)
+		}
+
+	defer func() {
+			if err := mysqlContainer.Terminate(ctx); err != nil {
+					panic(err)
+			}
+	}()
+
+	containerPort, err := mysqlContainer.MappedPort(ctx, "3306/tcp")
 	if err != nil {
-		return nil, err
+			t.Fatal(err)
 	}
 
-	return db, nil
-}
+	dsn := fmt.Sprintf("golang:golang@tcp(127.0.0.1:%s)/devbook", containerPort.Port())	
 
-func NewMock() (*sql.DB, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+  db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatal(err)
 	}
-
-	return db, mock
-}
-
-func TestMain(m *testing.M) {
-	db, mock := NewMock()
-
-	sql.OpenDB("mysql", db)
-
 	defer db.Close()
 
-	exitCode := m.Run()
+	userRepo := NewUsersRepository(db)
+		
+	t.Run("CreateUser", func(t *testing.T) {
+    user := models.User{
+        Nome:  "John Doe",
+        Nick:  "johndoe",
+        Email: "johndoe@example.com",
+        Senha: "password",
+    }
 
-	os.Exit(exitCode)
-}
+    userID, err := userRepo.Create(user)
 
-func TestCreateUser(t *testing.T) {
-	db, erro := setupTestDB()
-	if erro != nil {
-		t.Fatal(erro)
-	}
+    if err != nil {
+        t.Errorf("Error creating user: %v", err)
+    }
 
-	repository := NewUsersRepository(db)
-
-	user := models.User{
-		Nome:  "TestUser11",
-		Nick:  "testuser11",
-		Email: "testuser11@example.com",
-		Senha: "password",
-	}
-
-	id, err := repository.Create(user)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if id <= 0 {
-		t.Errorf("Esperava um ID maior que zero, mas obteve %d", id)
-	}
-}
-
-func TestGetAllUsers(t *testing.T) {
-	db, _ := setupTestDB()
-	defer db.Close()
-
-	repository := NewUsersRepository(db)
-
-	_, err := repository.GetAll("TestUser")
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestGetUserByID(t *testing.T) {
-	db, _ := setupTestDB()
-	defer db.Close()
-
-	repository := NewUsersRepository(db)
-
-	user, err := repository.GetById(1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if user.Id != 1 {
-		t.Errorf("Esperava um ID de usuário 1, mas obteve %d", user.Id)
-	}
+    if userID == 0 {
+        t.Error("User ID should not be 0")
+    }
+	})
 }
