@@ -21,105 +21,125 @@ func TestUserRepository(t *testing.T) {
 	sqlScriptPath := filepath.Join("..", "..", "sql", "sql.sql")
 
 	mysqlContainer, err := mysql.RunContainer(ctx,
-    testcontainers.WithImage("mysql:8"),
-    mysql.WithDatabase("devbook"),
-    mysql.WithUsername("golang"),
-    mysql.WithPassword("golang"),
+		testcontainers.WithImage("mysql:8"),
+		mysql.WithDatabase("devbook"),
+		mysql.WithUsername("golang"),
+		mysql.WithPassword("golang"),
 		mysql.WithScripts(sqlScriptPath))
-		if err != nil {
-				panic(err)
-		}
+	if err != nil {
+		panic(err)
+	}
 
 	defer func() {
-			if err := mysqlContainer.Terminate(ctx); err != nil {
-					panic(err)
-			}
+		if err := mysqlContainer.Terminate(ctx); err != nil {
+			panic(err)
+		}
 	}()
 
 	containerPort, err := mysqlContainer.MappedPort(ctx, "3306/tcp")
 	if err != nil {
-			t.Fatal(err)
+		t.Fatal(err)
 	}
 
-	dsn := fmt.Sprintf("golang:golang@tcp(127.0.0.1:%s)/devbook", containerPort.Port())	
+	dsn := fmt.Sprintf("golang:golang@tcp(127.0.0.1:%s)/devbook", containerPort.Port())
 
-  db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-			t.Fatal(err)
+		t.Fatal(err)
 	}
 	defer db.Close()
 
 	userRepo := NewUsersRepository(db)
-		
+
 	t.Run("CreateUser", func(t *testing.T) {
-    user := models.User{
-        Nome:  "John Doe",
-        Nick:  "johndoe",
-        Email: "johndoe@example.com",
-        Senha: "password",
-    }
+		user := models.User{
+			Nome:  "John Doe",
+			Nick:  "johndoe",
+			Email: "johndoe@example.com",
+			Senha: "password",
+		}
 
-    userID, err := userRepo.Create(user)
+		userID, err := userRepo.Create(user)
 
-    if err != nil {
-        t.Errorf("Error creating user: %v", err)
-    }
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+		}
 
-    if userID == 0 {
-        t.Error("User ID should not be 0")
-    }
+		if userID == 0 {
+			t.Error("User ID should not be 0")
+		}
 	})
 
 	t.Run("CreateTwoUsers", func(t *testing.T) {
-    user := models.User{
-        Nome:  "John Doe The Seccond",
-        Nick:  "johndoe2",
-        Email: "johndoe2@example.com",
-        Senha: "password",
-    }
+		user := models.User{
+			Nome:  "John Doe The Seccond",
+			Nick:  "johndoe2",
+			Email: "johndoe2@example.com",
+			Senha: "password",
+		}
 
-    userID, err := userRepo.Create(user)
+		userID, err := userRepo.Create(user)
 
-    if err != nil {
-        t.Errorf("Error creating user: %v", err)
-    }
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+		}
 
-    if userID == 1 || userID == 0 {
-        t.Error("User ID should be 2")
-    }
-		fmt.Println(userID, "dois")
+		if userID == 1 || userID == 0 {
+			t.Error("User ID should be 2")
+		}
 	})
-	t.Run("CreateUser fails when Nick already exists", func(t *testing.T) {
-    user := models.User{
-        Nome:  "John Does",
-        Nick:  "johndoe",
-        Email: "johndoe123@example.com",
-        Senha: "password",
-    }
+	t.Run("CreateUser fails when user.Nick already exists", func(t *testing.T) {
+		user := models.User{
+			Nome:  "John Does",
+			Nick:  "johndoe",
+			Email: "johndoe123@example.com",
+			Senha: "password",
+		}
 
-    userID, err := userRepo.Create(user)
+		userID, err := userRepo.Create(user)
 
-    if err == nil {
-        t.Error("Expected an error, but got nil")
-    }
+		if err == nil {
+			t.Error("Expected an error, but got nil")
+		}
 
-    if userID == 3 {
-        t.Error("User ID should not be 3")
-    }
+		if userID != 0 {
+			t.Error("User ID should be 0")
+		}
 	})
 
 	t.Run("CreateUser fails when user.Nome is empty", func(t *testing.T) {
-    user := models.User{
-        Nick:  "johndoes",
-        Email: "johndoe123@example.com",
-        Senha: "password",
-    }
+		user := models.User{
+			Nick:  "johndoes",
+			Email: "johndoe123@example.com",
+			Senha: "password",
+		}
 
-    userID, err := userRepo.Create(user)
+		userID, err := userRepo.Create(user)
 
-    if err == nil {
-        t.Errorf("Expected an error, but got nil, userID: %d", userID)
-    }
+		if err == nil {
+			t.Error("Expected an error, but got nil")
+		}
+
+        if userID != 0 {
+			t.Error("User ID should be 0")
+		}
 	})
 
+    t.Run("CreateUser fails when user.Email is empty", func(t *testing.T) {
+		user := models.User{
+			Nome:  "Jhen Doe",
+			Nick:  "jhendoe",
+			Senha: "password",
+		}
+
+		userID, err := userRepo.Create(user)
+
+		if err == nil {
+			t.Error("Expected an error, but got nil")
+		}
+
+        if userID != 0 {
+			t.Error("User ID should be 0")
+		}
+	})
 }
