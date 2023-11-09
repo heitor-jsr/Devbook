@@ -142,4 +142,22 @@ func TestUserRepository(t *testing.T) {
 			t.Error("User ID should be 0")
 		}
 	})
+
+    t.Run("CreateUser fails when user.Senha is empty", func(t *testing.T) {
+		user := models.User{
+			Nome:  "Jhen Doe",
+			Nick:  "jhendoe",
+            Email: "jhen123@example.com",
+		}
+
+		userID, err := userRepo.Create(user)
+
+		if err == nil {
+			t.Error("Expected an error, but got nil")
+		}
+
+        if userID != 0 {
+			t.Error("User ID should be 0")
+		}
+	})
 }
