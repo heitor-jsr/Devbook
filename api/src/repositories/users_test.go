@@ -108,4 +108,18 @@ func TestUserRepository(t *testing.T) {
     }
 	})
 
+	t.Run("CreateUser fails when user.Nome is empty", func(t *testing.T) {
+    user := models.User{
+        Nick:  "johndoes",
+        Email: "johndoe123@example.com",
+        Senha: "password",
+    }
+
+    userID, err := userRepo.Create(user)
+
+    if err == nil {
+        t.Errorf("Expected an error, but got nil, userID: %d", userID)
+    }
+	})
+
 }
