@@ -89,4 +89,23 @@ func TestUserRepository(t *testing.T) {
     }
 		fmt.Println(userID, "dois")
 	})
+	t.Run("CreateUser fails when Nick already exists", func(t *testing.T) {
+    user := models.User{
+        Nome:  "John Does",
+        Nick:  "johndoe",
+        Email: "johndoe123@example.com",
+        Senha: "password",
+    }
+
+    userID, err := userRepo.Create(user)
+
+    if err == nil {
+        t.Error("Expected an error, but got nil")
+    }
+
+    if userID == 3 {
+        t.Error("User ID should not be 3")
+    }
+	})
+
 }
