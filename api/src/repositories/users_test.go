@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
-	_ "github.com/go-sql-driver/mysql"
 
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
@@ -68,5 +68,25 @@ func TestUserRepository(t *testing.T) {
     if userID == 0 {
         t.Error("User ID should not be 0")
     }
+	})
+
+	t.Run("CreateTwoUsers", func(t *testing.T) {
+    user := models.User{
+        Nome:  "John Doe The Seccond",
+        Nick:  "johndoe2",
+        Email: "johndoe2@example.com",
+        Senha: "password",
+    }
+
+    userID, err := userRepo.Create(user)
+
+    if err != nil {
+        t.Errorf("Error creating user: %v", err)
+    }
+
+    if userID == 1 || userID == 0 {
+        t.Error("User ID should be 2")
+    }
+		fmt.Println(userID, "dois")
 	})
 }

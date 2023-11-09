@@ -7,16 +7,16 @@ import (
 )
 
 // struct que vai receber o nosso banco de dados. a lógica é que a conexão é aberta no controller e repassada para o repository realizar as manipulações no db.
-type usuarios struct {
+type Usuarios struct {
 	db *sql.DB
 }
 
-func NewUsersRepository(db *sql.DB) *usuarios {
-	return &usuarios{db}
+func NewUsersRepository(db *sql.DB) *Usuarios {
+	return &Usuarios{db}
 }
 
 // método create do repositório de usuarios. ele recebe como parametro um modelo de usuarios e retorna um uint64 com o id do usuario inserido e um erroo.
-func (u usuarios) Create(usuario models.User) (uint64, error) {
+func (u Usuarios) Create(usuario models.User) (uint64, error) {
 	stmt, erro := u.db.Prepare("insert into usuarios (nome, nick, email, senha) values(?, ?, ?, ?)")
 
 	if erro != nil {
@@ -41,7 +41,7 @@ func (u usuarios) Create(usuario models.User) (uint64, error) {
 }
 
 // traz todos os usuarios que atendem a um filtro de nome ou nick.
-func (u usuarios) GetAll(nameOrNick string) ([]models.User, error) {
+func (u Usuarios) GetAll(nameOrNick string) ([]models.User, error) {
 	nameOrNick = fmt.Sprintf("%%%s%%", nameOrNick)
 
 	// vai retornar todos os usuarios que parcialmente forem iguais ao parametro passado para a rota, seja no campo nick, seja no campo name.
@@ -68,7 +68,7 @@ func (u usuarios) GetAll(nameOrNick string) ([]models.User, error) {
 	return users, nil
 }
 
-func (u usuarios) GetById(id uint64) (models.User, error) {
+func (u Usuarios) GetById(id uint64) (models.User, error) {
 	lines, erro := u.db.Query("select id, nome, nick, email, criadoEm from usuarios where id = ?", id)
 
 	// nesse caso, não conseguimos mandar um nil, porque não estamos retornando um slice como acima. por retornamos um models.User, precisamos retornar o seu valor 0, que é o model de user vazio.
@@ -90,7 +90,7 @@ func (u usuarios) GetById(id uint64) (models.User, error) {
 	return user, nil
 }
 
-func (u usuarios) Update(id uint64 , user models.User) error {
+func (u Usuarios) Update(id uint64 , user models.User) error {
 	statemente, erro := u.db.Prepare("update usuarios set nome = ?, nick = ?, email = ? where id = ?")
 	if erro != nil {
 		return erro
@@ -105,7 +105,7 @@ func (u usuarios) Update(id uint64 , user models.User) error {
 	return nil
 }
 
-func (u usuarios) Delete(id uint64) error {
+func (u Usuarios) Delete(id uint64) error {
 	statemente, erro := u.db.Prepare("delete from usuarios where id = ?")
 	if erro != nil {
 		return erro
@@ -119,7 +119,7 @@ func (u usuarios) Delete(id uint64) error {
 	return nil
 }
 
-func (u usuarios) GetByEmail(email string) (models.User, error) {
+func (u Usuarios) GetByEmail(email string) (models.User, error) {
 	lines, erro := u.db.Query("select id, senha from usuarios where email = ?", email)
 	if erro != nil {
 		return models.User{}, erro
@@ -136,7 +136,7 @@ func (u usuarios) GetByEmail(email string) (models.User, error) {
 	return user, nil
 }
 
-func (u usuarios) Follow(followedId uint64, followerId uint64) error {
+func (u Usuarios) Follow(followedId uint64, followerId uint64) error {
 	// o ignore vai impedir que ocorra erro ao tentar seguir um usuário que já é seguido. ou seja, se vc chamar a mesma rota duas vezes, apontando para um usuario que vc ja segue, o ignore não vai deixar ela ser executada. isso economiza processamento, pq vc n precisa fazer toda uma busca no db pra ver se determinado user ja sergue outro, e ai decidir se deixa ou n sele seguir a pessoa.
 	statement, erro := u.db.Prepare("insert ignore into seguidores (usuario_id, seguidor_id) values (?, ?)")
 	if erro != nil {
@@ -151,7 +151,7 @@ func (u usuarios) Follow(followedId uint64, followerId uint64) error {
 	return nil
 }
 
-func (u usuarios) Unfollow(followedId uint64, followerId uint64) error {
+func (u Usuarios) Unfollow(followedId uint64, followerId uint64) error {
 	// vai deletar a linha do DB que tem o usuario_id e o seguidor_id como seus dados.
 	statement, erro := u.db.Prepare("delete from seguidores where usuario_id = ? and seguidor_id = ?")
 	if erro != nil {
@@ -166,7 +166,7 @@ func (u usuarios) Unfollow(followedId uint64, followerId uint64) error {
 	return nil
 }
 
-func (u usuarios) GetFollowers(userId uint64) ([]models.User, error) {
+func (u Usuarios) GetFollowers(userId uint64) ([]models.User, error) {
 	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u 
 	inner join seguidores s on u.id = s.seguidor_id where s.usuario_id = ?`, userId)
 
@@ -195,7 +195,7 @@ func (u usuarios) GetFollowers(userId uint64) ([]models.User, error) {
 	return users, nil
 }
 
-func (u usuarios) GetFollowing(userId uint64) ([]models.User, error) {
+func (u Usuarios) GetFollowing(userId uint64) ([]models.User, error) {
 	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u 
 	inner join seguidores s on u.id = s.usuario_id where s.seguidor_id = ?`, userId)
 	if erro != nil {
@@ -222,7 +222,7 @@ func (u usuarios) GetFollowing(userId uint64) ([]models.User, error) {
 	return users, nil
 }
 
-func (u usuarios) GetPasswordFromDb(userId uint64) (string, error) {
+func (u Usuarios) GetPasswordFromDb(userId uint64) (string, error) {
 	lines, erro := u.db.Query("select senha from usuarios where id = ?", userId)
 	if erro != nil {
 		return "", erro
@@ -241,7 +241,7 @@ func (u usuarios) GetPasswordFromDb(userId uint64) (string, error) {
 	return user.Senha, nil
 }
 
-func (u usuarios) ChangePassword(userId uint64, newPassword string) error {
+func (u Usuarios) ChangePassword(userId uint64, newPassword string) error {
 	statement, erro := u.db.Prepare("update usuarios set senha = ? where id = ?")
 	if erro != nil {
 		return erro
