@@ -1,7 +1,6 @@
 package testutil
 
 import (
-	"api/src/repositories"
 	"context"
 	"database/sql"
 	"fmt"
@@ -14,7 +13,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 )
 
-func SetupMySQLContainer() (*repositories.Usuarios, error) {
+func SetupMySQLContainer() (*sql.DB, error) {
 	ctx := context.Background()
 
 	sqlScriptPath := filepath.Join("..", "..", "sql", "sql.sql")
@@ -47,12 +46,5 @@ func SetupMySQLContainer() (*repositories.Usuarios, error) {
 	if err != nil {
 			log.Fatal(err)
 	}
-	defer db.Close()
-
-	fmt.Println(dsn)
-
-
-	userRepo := repositories.NewUsersRepository(db)
-
-	return userRepo, nil
+	return db, nil
 }
