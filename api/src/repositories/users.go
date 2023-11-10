@@ -44,25 +44,48 @@ func (u Usuarios) Create(usuario models.User) (uint64, error) {
 func (u Usuarios) GetAll(nameOrNick string) ([]models.User, error) {
 	nameOrNick = fmt.Sprintf("%%%s%%", nameOrNick)
 
-	// vai retornar todos os usuarios que parcialmente forem iguais ao parametro passado para a rota, seja no campo nick, seja no campo name.
-	lines, erro := u.db.Query("select id, nome, nick, email, criadoEm from usuarios where nome like ? or nick like ?", nameOrNick, nameOrNick)
-	
-	if erro != nil {
-		return nil, erro
-	}
-
-	defer lines.Close()
-
 	var users []models.User
-	// mesma logica de cima. vai inicializar uma variavel de slice de users vazia, e depois iterar sobre as linhas retornadas pela query mysql e armazenar na variavel acima cada um dos users que é retornado. para isso, criamos uma var aux no escopo do for que a cada iteração vai receber um novo dado de usuario e depois ser repassado para o slice com o append.
-	for lines.Next() {
-		var user models.User
 
-		if erro = lines.Scan(&user.Id, &user.Nome, &user.Nick, &user.Email, &user.CriadoEm); erro != nil {
+	if len(nameOrNick) == 0 {
+		lines, erro := u.db.Query("select id, nome, nick, email from usuarios")
+
+		if erro != nil {
 			return nil, erro
 		}
 
-		users = append(users, user)
+		defer lines.Close()
+
+		for lines.Next() {
+			var user models.User
+
+			if erro = lines.Scan(&user.Id, &user.Nome, &user.Nick, &user.Email); erro != nil {
+				return nil, erro
+			}
+
+			users = append(users, user)
+		}
+
+		return users, nil
+	} else {
+		// vai retornar todos os usuarios que parcialmente forem iguais ao parametro passado para a rota, seja no campo nick, seja no campo name.
+		lines, erro := u.db.Query("select id, nome, nick, email from usuarios where nome like ? or nick like ?", nameOrNick, nameOrNick)
+
+		if erro != nil {
+			return nil, erro
+		}
+
+		defer lines.Close()
+
+		// mesma logica de cima. vai inicializar uma variavel de slice de users vazia, e depois iterar sobre as linhas retornadas pela query mysql e armazenar na variavel acima cada um dos users que é retornado. para isso, criamos uma var aux no escopo do for que a cada iteração vai receber um novo dado de usuario e depois ser repassado para o slice com o append.
+		for lines.Next() {
+			var user models.User
+
+			if erro = lines.Scan(&user.Id, &user.Nome, &user.Nick, &user.Email); erro != nil {
+				return nil, erro
+			}
+
+			users = append(users, user)
+		}
 	}
 
 	return users, nil
@@ -90,7 +113,7 @@ func (u Usuarios) GetById(id uint64) (models.User, error) {
 	return user, nil
 }
 
-func (u Usuarios) Update(id uint64 , user models.User) error {
+func (u Usuarios) Update(id uint64, user models.User) error {
 	statemente, erro := u.db.Prepare("update usuarios set nome = ?, nick = ?, email = ? where id = ?")
 	if erro != nil {
 		return erro
