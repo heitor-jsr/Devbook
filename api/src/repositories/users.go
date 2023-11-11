@@ -116,6 +116,11 @@ func (u Usuarios) GetById(id uint64) (models.User, error) {
 }
 
 func (u Usuarios) Update(id uint64, user models.User) error {
+	_, err := u.GetById(id)
+	if err != nil {
+		return err
+	}
+
 	statemente, erro := u.db.Prepare("update usuarios set nome = ?, nick = ?, email = ? where id = ?")
 	if erro != nil {
 		return erro
