@@ -242,4 +242,18 @@ func TestUserRepository(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
+	t.Run("GetByEmail", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			user, err := userRepo.GetByEmail("johndoe2@example.com")
+			fmt.Println(user)
+
+			assert.Nil(t, err)
+			assert.NoError(t, err)
+			assert.IsType(t, models.User{}, user)
+			assert.Exactly(t, user, models.User{
+				Id:    2,
+				Senha: "password",
+			})			
+		})
+	})
 }

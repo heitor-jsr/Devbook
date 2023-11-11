@@ -162,6 +162,8 @@ func (u Usuarios) GetByEmail(email string) (models.User, error) {
 		if erro = lines.Scan(&user.Id, &user.Senha); erro != nil {
 			return models.User{}, erro
 		}
+	} else {
+		return models.User{}, fmt.Errorf("user with email %s not found", email)
 	}
 	return user, nil
 }
