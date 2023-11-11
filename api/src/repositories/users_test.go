@@ -5,255 +5,359 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 )
 
-func TestUserRepository(t *testing.T) {
+type UserRepositorySuite struct {
+	suite.Suite
+	db       *sql.DB
+	userRepo *Usuarios
+	container testcontainers.Container
+	dsn      string
+	tx       *sql.Tx
+}
 
+func (suite *UserRepositorySuite) SetupSuite() {
 	ctx := context.Background()
-
-	sqlScriptPath := filepath.Join("..", "..", "sql", "sql.sql")
-
-	mysqlContainer, err := mysql.RunContainer(ctx,
-		testcontainers.WithImage("mysql:8"),
-		mysql.WithDatabase("devbook"),
-		mysql.WithUsername("golang"),
-		mysql.WithPassword("golang"),
-		mysql.WithScripts(sqlScriptPath))
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := mysqlContainer.Terminate(ctx); err != nil {
-			panic(err)
-		}
-	}()
-
-	containerPort, err := mysqlContainer.MappedPort(ctx, "3306/tcp")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	dsn := fmt.Sprintf("golang:golang@tcp(127.0.0.1:%s)/devbook", containerPort.Port())
+	container, dsn, teardown := startMySQLContainer(ctx, suite.T())
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		t.Fatal(err)
+			suite.T().Fatal(err)
 	}
-	defer db.Close()
 
-	userRepo := NewUsersRepository(db)
+	suite.db = db
+	suite.userRepo = NewUsersRepository(db)
+	suite.container = container
+	suite.dsn = dsn
 
-	t.Run("Create", func(t *testing.T) {
-		t.Run("Success on creating one first user", func(t *testing.T) {
-			user := models.User{
-				Nome:  "John Doe",
-				Nick:  "johndoe",
-				Email: "johndoe@example.com",
-				Senha: "password",
+	suite.T().Cleanup(func() {
+			suite.T().Cleanup(func() {
+        if err := suite.tx.Rollback(); err != nil {
+            suite.T().Fatal(err)
+        }
+
+        _, err := teardown()
+        if err != nil {
+            suite.T().Fatal(err)
+        }
+    })
+			if suite.db != nil {
+					if err := suite.db.Close(); err != nil {
+							suite.T().Errorf("Error closing database connection: %v", err)
+					}
 			}
+	})
 
-			userID, err := userRepo.Create(user)
+	suite.tx, err = suite.db.Begin()
+	if err != nil {
+			suite.T().Fatal(err)
+	}
+}
 
-			assert.NotNil(t, userID)
-			assert.NoError(t, err)
-			assert.IsType(t, uint64(1), userID)
-			assert.Equal(t, uint64(1), userID)
-		})
+func (suite *UserRepositorySuite) SetupTest() {
+	err := suite.CleanDatabase()
+	if err != nil {
+			suite.T().Fatal(err)
+	}
 
-		t.Run("Success on creating one second user", func(t *testing.T) {
-			user := models.User{
-				Nome:  "John Doe The Seccond",
-				Nick:  "johndoe2",
-				Email: "johndoe2@example.com",
-				Senha: "password",
-			}
+	err = suite.SeedDatabase()
+	if err != nil {
+			suite.T().Fatal(err)
+	}
+}
 
-			userID, err := userRepo.Create(user)
+func (suite *UserRepositorySuite) TestCreate() {
+	t := suite.T()
+	t.Run("Success on creating one first user", func(t *testing.T) {
+		user := models.User{
+			Nome:  "User Name",
+			Nick:  "username",
+			Email: "username@example.com",
+			Senha: "password",
+		}
 
-			assert.NotNil(t, userID)
-			assert.NoError(t, err)
-			assert.IsType(t, uint64(2), userID)
-			assert.Equal(t, uint64(2), userID)
-		})
-		t.Run("Fails when user.Nick already exists", func(t *testing.T) {
-			user := models.User{
-				Nome:  "John Does",
-				Nick:  "johndoe",
-				Email: "johndoe123@example.com",
-				Senha: "password",
-			}
+		userID, err := suite.userRepo.Create(user)
 
-			userID, err := userRepo.Create(user)
+		assert.NotNil(t, userID)
+		assert.NoError(t, err)
+		assert.IsType(t, uint64(3), userID)
+		assert.Equal(t, uint64(3), userID)
+	})
 
-            assert.NotNil(t, err)
-			assert.Error(t, err)
-			assert.Equal(t, uint64(0), userID)
+	t.Run("Fails when user.Nick already exists", func(t *testing.T) {
+		user := models.User{
+			Nome:  "John Does",
+			Nick:  "johndoe",
+			Email: "johndoe123@example.com",
+			Senha: "password",
+		}
 
-		})
+		userID, err := suite.userRepo.Create(user)
 
-		t.Run("Fails when user.Nome is empty", func(t *testing.T) {
-			user := models.User{
-				Nick:  "johndoes",
-				Email: "johndoe123@example.com",
-				Senha: "password",
-			}
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Equal(t, uint64(0), userID)
+		assert.EqualError(t, err, "Error 1062 (23000): Duplicate entry 'johndoe' for key 'usuarios.nick'")
+	})
 
-			userID, err := userRepo.Create(user)
+	t.Run("Fails when user.Email already exists", func(t *testing.T) {
+		user := models.User{
+			Nome:  "John Does",
+			Nick:  "johndoesss",
+			Email: "johndoe@example.com",
+			Senha: "password",
+		}
 
-            assert.NotNil(t, err)
-			assert.Error(t, err)
-			assert.Equal(t, uint64(0), userID)
+		userID, err := suite.userRepo.Create(user)
 
-		})
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Equal(t, uint64(0), userID)
+		assert.EqualError(t, err, "Error 1062 (23000): Duplicate entry 'johndoe@example.com' for key 'usuarios.email'")
+	})
 
-		t.Run("Fails when user.Email is empty", func(t *testing.T) {
-			user := models.User{
-				Nome:  "Jhen Doe",
-				Nick:  "jhendoe",
-				Senha: "password",
-			}
+	t.Run("Fails when user.Nome is empty", func(t *testing.T) {
+		user := models.User{
+			Nick:  "johndoes",
+			Email: "johndoe123@example.com",
+			Senha: "password",
+		}
 
-			userID, err := userRepo.Create(user)
+		userID, err := suite.userRepo.Create(user)
 
-            assert.NotNil(t, err)
-			assert.Error(t, err)
-			assert.Equal(t, uint64(0), userID)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Equal(t, uint64(0), userID)
+	})
 
-		})
+	t.Run("Fails when user.Email is empty", func(t *testing.T) {
+		user := models.User{
+			Nome:  "Jhen Doe",
+			Nick:  "jhendoe",
+			Senha: "password",
+		}
 
-		t.Run("Fails when user.Senha is empty", func(t *testing.T) {
-			user := models.User{
-				Nome:  "Jhen Doe",
-				Nick:  "jhendoe",
-				Email: "jhen123@example.com",
-			}
+		userID, err := suite.userRepo.Create(user)
 
-			userID, err := userRepo.Create(user)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Equal(t, uint64(0), userID)
+	})
 
-            assert.NotNil(t, err)
-			assert.Error(t, err)
-			assert.Equal(t, uint64(0), userID)
+	t.Run("Fails when user.Senha is empty", func(t *testing.T) {
+		user := models.User{
+			Nome:  "Jhen Doe",
+			Nick:  "jhendoe",
+			Email: "jhen123@example.com",
+		}
 
+		userID, err := suite.userRepo.Create(user)
+
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Equal(t, uint64(0), userID)
+	})
+}
+
+func (suite *UserRepositorySuite) TestGetAll() {
+	t := suite.T()
+	t.Run("Success without name filter", func(t *testing.T) {
+		users, err := suite.userRepo.GetAll("")
+
+		assert.NotNil(t, users)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.User{}, users)
+		assert.Len(t, users, 2)
+	})
+
+	t.Run("Success with name filter", func(t *testing.T) {
+		users, err := suite.userRepo.GetAll("The Second")
+
+		assert.NotNil(t, users)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.User{}, users)
+		fmt.Println(users)
+		assert.Len(t, users, 1)
+		assert.Contains(t, users, models.User{
+			Id:       2,
+			Nome:     "John Doe The Second",
+			Nick:     "johndoe2",
+			Email:    "johndoe2@example.com",
+			CriadoEm: time.Time{},
 		})
 	})
 
-  t.Run("GetAll", func(t *testing.T) {
-		t.Run("Success without name filter", func(t *testing.T) {
-			users, err := userRepo.GetAll("")
+	t.Run("Fails when the filter doesn't match any user", func(t *testing.T) {
+		users, err := suite.userRepo.GetAll("zzz")
 
-			assert.NotNil(t, users)
-			assert.NoError(t, err)
-			assert.IsType(t, []models.User{}, users)
-			assert.Len(t, users, 2)
-
-		})
-
-		t.Run("Success with name filter", func(t *testing.T) {
-			users, err := userRepo.GetAll("The Seccond")
-
-			assert.NotNil(t, users)
-			assert.NoError(t, err)
-			assert.IsType(t, []models.User{}, users)
-			assert.Len(t, users, 1)
-			assert.Contains(t, users, models.User{
-					Id:    2,
-					Nome:  "John Doe The Seccond",
-					Nick:  "johndoe2",
-					Email: "johndoe2@example.com",
-					CriadoEm: time.Time{},
-			})
-		})
-		t.Run("Fails when the filter doesn't match any user", func(t *testing.T) {
-			users, err := userRepo.GetAll("zzz")
-
-      assert.Nil(t, users)
-			assert.NoError(t, err)
-			assert.IsType(t, []models.User{}, users)
-			assert.Len(t, users, 0)
-
-		})
-	})	
-		t.Run("GetById", func(t *testing.T) {
-			t.Run("Success", func(t *testing.T) {
-				user, err := userRepo.GetById(2)
-	
-				assert.NotNil(t, user)
-				assert.NoError(t, err)
-				assert.IsType(t, models.User{}, user)
-				assert.Exactly(t, user, models.User{
-					Id:    2,
-					Nome:  "John Doe The Seccond",
-					Nick:  "johndoe2",
-					Email: "johndoe2@example.com",
-					CriadoEm: time.Time{},
-			})
-		})
-	
-			t.Run("Fails", func(t *testing.T) {
-				user, err := userRepo.GetById(3)
-	
-				assert.NotNil(t, err)
-				assert.Error(t, err, "no user found with ID: 3")
-				assert.IsType(t, models.User{}, user)
-				assert.Equal(t, fmt.Errorf("no user found with ID: %d", 3), err)
-			})
+		assert.Nil(t, users)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.User{}, users)
+		assert.Len(t, users, 0)
 	})
-	t.Run("Update", func(t *testing.T) {
-		t.Run("Success", func(t *testing.T) {
-			user := models.User{
-				Nome:  "John Doe The First",
-				Nick:  "johndoefirst",
-				Email: "johndoe@example.com",
+}
+
+func (suite *UserRepositorySuite) TestGetById() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		user, err := suite.userRepo.GetById(2)
+
+		assert.NotNil(t, user)
+		assert.NoError(t, err)
+		assert.IsType(t, models.User{}, user)
+		assert.Exactly(t, user, models.User{
+			Id:       2,
+			Nome:     "John Doe The Second",
+			Nick:     "johndoe2",
+			Email:    "johndoe2@example.com",
+			CriadoEm: time.Time{},
+		})
+	})
+
+	t.Run("Fails", func(t *testing.T) {
+		user, err := suite.userRepo.GetById(3)
+
+		assert.NotNil(t, err)
+		assert.Error(t, err, "no user found with ID: 3")
+		assert.IsType(t, models.User{}, user)
+		assert.Equal(t, fmt.Errorf("no user found with ID: %d", 3), err)
+	})
+}
+
+func (suite *UserRepositorySuite) TestUpdate() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		user := models.User{
+			Nome:  "John Doe The First",
+			Nick:  "johndoefirst",
+			Email: "johndoe@example.com",
+		}
+
+		err := suite.userRepo.Update(1, user)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+
+		userUpdated, err := suite.userRepo.GetById(1)
+
+		assert.IsType(t, models.User{}, userUpdated)
+		assert.Exactly(t, userUpdated, models.User{
+			Id:       1,
+			Nome:     "John Doe The First",
+			Nick:     "johndoefirst",
+			Email:    "johndoe@example.com",
+			CriadoEm: time.Time{},
+		})
+	})
+}
+
+func (suite *UserRepositorySuite) TestDelete() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.userRepo.Delete(4)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+	})
+}
+
+func (suite *UserRepositorySuite) TestGetByEmail() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		user, err := suite.userRepo.GetByEmail("johndoe2@example.com")
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.IsType(t, models.User{}, user)
+		assert.Exactly(t, user, models.User{
+			Id:    2,
+			Senha: "password",
+		})
+	})
+}
+
+func startMySQLContainer(ctx context.Context, t *testing.T) (testcontainers.Container, string, func() (string, error)) {
+	createTablesScriptPath := filepath.Join("..", "..", "sql", "create_tables.sql");
+
+
+	mysqlContainer, err := mysql.RunContainer(ctx,
+			testcontainers.WithImage("mysql:8"),
+			mysql.WithDatabase("devbook"),
+			mysql.WithUsername("golang"),
+			mysql.WithPassword("golang"),
+			mysql.WithScripts(createTablesScriptPath),
+	)
+	if err != nil {
+			t.Fatal(err)
+	}
+
+	ip, err := mysqlContainer.Host(ctx)
+	if err != nil {
+			t.Fatal(err)
+	}
+
+	port, err := mysqlContainer.MappedPort(ctx, "3306/tcp")
+	if err != nil {
+			t.Fatal(err)
+	}
+
+	dsn := fmt.Sprintf("golang:golang@tcp(%s:%s)/devbook", ip, port.Port())
+
+	teardown := func() (string, error) {
+			if err := mysqlContainer.Terminate(ctx); err != nil {
+					return "", err
 			}
+			return dsn, nil
+	}
 
-			err := userRepo.Update(1, user)
+	return mysqlContainer, dsn, teardown
+}
 
-			assert.Nil(t, err)
-			assert.NoError(t, err)
+func (suite *UserRepositorySuite) SeedDatabase() error {
+	fmt.Println("Seeding database...")
+	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
 
-			userUpdated, err := userRepo.GetById(1)
+	insertDataScript, err := ioutil.ReadFile(insertDataScriptPath)
+	if err != nil {
+			suite.T().Errorf("Erro ao ler script de inserção de dados: %v", err)
+			return err
+	}
 
-			assert.IsType(t, models.User{}, userUpdated)
-			assert.Exactly(t, userUpdated, models.User{
-				Id:    1,
-				Nome:  "John Doe The First",
-				Nick:  "johndoefirst",
-				Email: "johndoe@example.com",
-				CriadoEm: time.Time{},
-			})
-		})
-	})
-	t.Run("Delete", func(t *testing.T) {
-		t.Run("Success", func(t *testing.T) {
-			err := userRepo.Delete(1)
+	_, err = suite.db.ExecContext(context.Background(), string(insertDataScript))
+	if err != nil {
+			suite.T().Errorf("Erro ao inserir dados: %v", err)
+			return err
+	}
 
-			assert.Nil(t, err)
-			assert.NoError(t, err)
-		})
-	})
-	t.Run("GetByEmail", func(t *testing.T) {
-		t.Run("Success", func(t *testing.T) {
-			user, err := userRepo.GetByEmail("johndoe2@example.com")
-			fmt.Println(user)
+	return nil
+}
 
-			assert.Nil(t, err)
-			assert.NoError(t, err)
-			assert.IsType(t, models.User{}, user)
-			assert.Exactly(t, user, models.User{
-				Id:    2,
-				Senha: "password",
-			})			
-		})
-	})
+func (suite *UserRepositorySuite) CleanDatabase() error {
+	_, err := suite.db.ExecContext(context.Background(), "DELETE FROM usuarios")
+	if err != nil {
+			return err
+	}
+
+	_, err = suite.db.ExecContext(context.Background(), "ALTER TABLE usuarios AUTO_INCREMENT = 1")
+	if err != nil {
+			return err
+	}
+
+	return nil
+}
+
+func TestUserRepositorySuite(t *testing.T) {
+	suite.Run(t, new(UserRepositorySuite))
 }

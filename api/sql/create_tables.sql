@@ -1,7 +1,5 @@
 CREATE DATABASE IF NOT EXISTS devbook;
 
-USE devbook;
-
 DROP TABLE IF EXISTS usuarios;
 DROP TABLE IF EXISTS seguidores;
 DROP TABLE IF EXISTS publicacoes;
@@ -15,7 +13,6 @@ CREATE TABLE usuarios (
   criadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
 ) ENGINE=INNODB;
 
-/*pra cada seguidor que o usuário tem, vai ser criada (linha) uma instância de seguidores*/
 CREATE TABLE seguidores (
   usuario_id INT NOT NULL, FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
   seguidor_id INT NOT NULL, FOREIGN KEY (seguidor_id) REFERENCES usuarios(id) ON DELETE CASCADE,
