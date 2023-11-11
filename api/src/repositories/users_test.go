@@ -148,7 +148,7 @@ func TestUserRepository(t *testing.T) {
 		})
 	})
 
-    t.Run("GetAll", func(t *testing.T) {
+  t.Run("GetAll", func(t *testing.T) {
 		t.Run("Success without name filter", func(t *testing.T) {
 			users, err := userRepo.GetAll("")
 
@@ -166,76 +166,47 @@ func TestUserRepository(t *testing.T) {
 			assert.NoError(t, err)
 			assert.IsType(t, []models.User{}, users)
 			assert.Len(t, users, 1)
-            assert.Contains(t, users, models.User{
-                Id:    2,
-                Nome:  "John Doe The Seccond",
-                Nick:  "johndoe2",
-                Email: "johndoe2@example.com",
-                CriadoEm: time.Time{},
-            })
+			assert.Contains(t, users, models.User{
+					Id:    2,
+					Nome:  "John Doe The Seccond",
+					Nick:  "johndoe2",
+					Email: "johndoe2@example.com",
+					CriadoEm: time.Time{},
+			})
 		})
 		t.Run("Fails when the filter doesn't match any user", func(t *testing.T) {
 			users, err := userRepo.GetAll("zzz")
 
-            assert.Nil(t, users)
+      assert.Nil(t, users)
 			assert.NoError(t, err)
 			assert.IsType(t, []models.User{}, users)
 			assert.Len(t, users, 0)
 
 		})
-
-		// t.Run("Fails when user.Nome is empty", func(t *testing.T) {
-		// 	user := models.User{
-		// 		Nick:  "johndoes",
-		// 		Email: "johndoe123@example.com",
-		// 		Senha: "password",
-		// 	}
-
-		// 	userID, err := userRepo.Create(user)
-
-		// 	if err == nil {
-		// 		t.Error("Expected an error, but got nil")
-		// 	}
-
-		// 	if userID != 0 {
-		// 		t.Error("User ID should be 0")
-		// 	}
-		// })
-
-		// t.Run("Fails when user.Email is empty", func(t *testing.T) {
-		// 	user := models.User{
-		// 		Nome:  "Jhen Doe",
-		// 		Nick:  "jhendoe",
-		// 		Senha: "password",
-		// 	}
-
-		// 	userID, err := userRepo.Create(user)
-
-		// 	if err == nil {
-		// 		t.Error("Expected an error, but got nil")
-		// 	}
-
-		// 	if userID != 0 {
-		// 		t.Error("User ID should be 0")
-		// 	}
-		// })
-
-		// t.Run("Fails when user.Senha is empty", func(t *testing.T) {
-		// 	user := models.User{
-		// 		Nome:  "Jhen Doe",
-		// 		Nick:  "jhendoe",
-		// 		Email: "jhen123@example.com",
-		// 	}
-
-		// 	userID, err := userRepo.Create(user)
-
-		// 	if err == nil {
-		// 		t.Error("Expected an error, but got nil")
-		// 	}
-
-		// 	if userID != 0 {
-		// 		t.Error("User ID should be 0")
-		// 	}
-		// })
+	})	
+		t.Run("GetById", func(t *testing.T) {
+			t.Run("Success", func(t *testing.T) {
+				user, err := userRepo.GetById(2)
+	
+				assert.NotNil(t, user)
+				assert.NoError(t, err)
+				assert.IsType(t, models.User{}, user)
+				assert.Exactly(t, user, models.User{
+					Id:    2,
+					Nome:  "John Doe The Seccond",
+					Nick:  "johndoe2",
+					Email: "johndoe2@example.com",
+					CriadoEm: time.Time{},
+			})
+		})
+	
+			t.Run("Fails", func(t *testing.T) {
+				user, err := userRepo.GetById(3)
+	
+				assert.NotNil(t, err)
+				assert.Error(t, err, "no user found with ID: 3")
+				assert.IsType(t, models.User{}, user)
+				assert.Equal(t, fmt.Errorf("no user found with ID: %d", 3), err)
+			})
 	})
 }
