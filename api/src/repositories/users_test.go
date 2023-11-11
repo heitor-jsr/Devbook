@@ -209,4 +209,29 @@ func TestUserRepository(t *testing.T) {
 				assert.Equal(t, fmt.Errorf("no user found with ID: %d", 3), err)
 			})
 	})
+	t.Run("Update", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			user := models.User{
+				Nome:  "John Doe The First",
+				Nick:  "johndoefirst",
+				Email: "johndoe@example.com",
+			}
+
+			err := userRepo.Update(1, user)
+
+			assert.Nil(t, err)
+			assert.NoError(t, err)
+
+			userUpdated, err := userRepo.GetById(1)
+
+			assert.IsType(t, models.User{}, userUpdated)
+			assert.Exactly(t, userUpdated, models.User{
+				Id:    1,
+				Nome:  "John Doe The First",
+				Nick:  "johndoefirst",
+				Email: "johndoe@example.com",
+				CriadoEm: time.Time{},
+		})
+		})
+	})
 }
