@@ -231,7 +231,15 @@ func TestUserRepository(t *testing.T) {
 				Nick:  "johndoefirst",
 				Email: "johndoe@example.com",
 				CriadoEm: time.Time{},
+			})
 		})
+	})
+	t.Run("Delete", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			err := userRepo.Delete(1)
+
+			assert.Nil(t, err)
+			assert.NoError(t, err)
 		})
 	})
 }
