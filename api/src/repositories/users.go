@@ -227,7 +227,7 @@ func (u Usuarios) GetFollowers(userId uint64) ([]models.User, error) {
 }
 
 func (u Usuarios) GetFollowing(userId uint64) ([]models.User, error) {
-	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u 
+	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email from usuarios u 
 	inner join seguidores s on u.id = s.usuario_id where s.seguidor_id = ?`, userId)
 	if erro != nil {
 		return nil, erro
@@ -243,7 +243,6 @@ func (u Usuarios) GetFollowing(userId uint64) ([]models.User, error) {
 			&user.Nome,
 			&user.Nick,
 			&user.Email,
-			&user.CriadoEm,
 		); erro != nil {
 			return nil, erro
 		}

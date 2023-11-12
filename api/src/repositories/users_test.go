@@ -328,6 +328,36 @@ func (suite *UserRepositorySuite) TestGetFollowers() {
 	t.Run("Success", func(t *testing.T) {
 		err := suite.userRepo.Follow(2, 1)
 
+		user, err := suite.userRepo.GetFollowers(1)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.User{}, user)
+		assert.Contains(t, user, models.User{
+			Id:       2,
+			Nome:     "John Doe The Second",
+			Nick:     "johndoe2",
+			Email:    "johndoe2@example.com",
+			CriadoEm: time.Time{},
+		})
+	})
+
+	t.Run("Returns nil if user has no followers", func(t *testing.T) {
+		err := suite.userRepo.Follow(2, 1)
+
+		user, _ := suite.userRepo.GetFollowers(2)
+
+		assert.IsType(t, []models.User{}, user)
+		assert.Empty(t, user)
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+	})
+}
+
+func (suite *UserRepositorySuite) TestGetFollowing() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.userRepo.Follow(2, 1)
 
 		user, err := suite.userRepo.GetFollowers(1)
 
@@ -341,6 +371,17 @@ func (suite *UserRepositorySuite) TestGetFollowers() {
 			Email:    "johndoe2@example.com",
 			CriadoEm: time.Time{},
 		})
+	})
+
+	t.Run("Returns nil if user has no followers", func(t *testing.T) {
+		err := suite.userRepo.Follow(2, 1)
+
+		user, _ := suite.userRepo.GetFollowers(2)
+
+		assert.IsType(t, []models.User{}, user)
+		assert.Empty(t, user)
+		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 }
 
