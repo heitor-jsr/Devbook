@@ -288,6 +288,62 @@ func (suite *UserRepositorySuite) TestGetByEmail() {
 	})
 }
 
+func (suite *UserRepositorySuite) TestFollowUser() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.userRepo.Follow(2, 1)
+
+		user, err := suite.userRepo.GetFollowers(1)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.User{}, user)
+		assert.Contains(t, user, models.User{
+			Id:       2,
+			Nome:     "John Doe The Second",
+			Nick:     "johndoe2",
+			Email:    "johndoe2@example.com",
+			CriadoEm: time.Time{},
+		})
+	})
+}
+
+func (suite *UserRepositorySuite) TestUnfollowUser() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.userRepo.Follow(2, 1)
+
+		err2 := suite.userRepo.Unfollow(2, 1)
+
+		user, err := suite.userRepo.GetFollowers(1)
+
+		assert.Nil(t, err2, err)
+		assert.NoError(t, err2, err)
+		assert.IsType(t, []models.User{}, user)
+	})
+}
+
+func (suite *UserRepositorySuite) TestGetFollowers() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.userRepo.Follow(2, 1)
+
+
+		user, err := suite.userRepo.GetFollowers(1)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.User{}, user)
+		assert.Contains(t, user, models.User{
+			Id:       2,
+			Nome:     "John Doe The Second",
+			Nick:     "johndoe2",
+			Email:    "johndoe2@example.com",
+			CriadoEm: time.Time{},
+		})
+	})
+}
+
 func startMySQLContainer(ctx context.Context, t *testing.T) (testcontainers.Container, string, func() (string, error)) {
 	createTablesScriptPath := filepath.Join("..", "..", "sql", "create_tables.sql");
 

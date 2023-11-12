@@ -199,7 +199,7 @@ func (u Usuarios) Unfollow(followedId uint64, followerId uint64) error {
 }
 
 func (u Usuarios) GetFollowers(userId uint64) ([]models.User, error) {
-	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u 
+	lines, erro := u.db.Query(`select u.id, u.nome, u.nick, u.email from usuarios u 
 	inner join seguidores s on u.id = s.seguidor_id where s.usuario_id = ?`, userId)
 
 	if erro != nil {
@@ -217,7 +217,6 @@ func (u Usuarios) GetFollowers(userId uint64) ([]models.User, error) {
 			&user.Nome,
 			&user.Nick,
 			&user.Email,
-			&user.CriadoEm,
 		); erro != nil {
 			return nil, erro
 		}
