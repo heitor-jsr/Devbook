@@ -188,7 +188,6 @@ func (suite *UserRepositorySuite) TestGetAll() {
 		assert.NotNil(t, users)
 		assert.NoError(t, err)
 		assert.IsType(t, []models.User{}, users)
-		fmt.Println(users)
 		assert.Len(t, users, 1)
 		assert.Contains(t, users, models.User{
 			Id:       2,
@@ -358,7 +357,6 @@ func (suite *UserRepositorySuite) TestGetFollowing() {
 		err := suite.userRepo.Follow(2, 1)
 
 		user, err := suite.userRepo.GetFollowing(2)
-		fmt.Println(user)
 		assert.Nil(t, err)
 		assert.NoError(t, err)
 		assert.IsType(t, []models.User{}, user)
@@ -389,6 +387,29 @@ func (suite *UserRepositorySuite) TestGetPasswordFromDb() {
 		assert.Nil(t, err)
 		assert.NoError(t, err)
 		assert.Equal(t, "password", password)
+	})
+
+	t.Run("Returns empty string if user does not exists", func(t *testing.T) {
+		password, err := suite.userRepo.GetPasswordFromDb(999)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.Equal(t, "", password)
+		assert.Empty(t, password)
+	})
+}
+
+func (suite *UserRepositorySuite) TestChangePassword() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.userRepo.ChangePassword(1, "passwordChanged")
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+
+		password, err := suite.userRepo.GetPasswordFromDb(1)
+
+		assert.Equal(t, "passwordChanged", password)
 	})
 
 	t.Run("Returns empty string if user does not exists", func(t *testing.T) {
