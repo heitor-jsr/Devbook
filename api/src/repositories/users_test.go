@@ -381,6 +381,26 @@ func (suite *UserRepositorySuite) TestGetFollowing() {
 	})
 }
 
+func (suite *UserRepositorySuite) TestGetPasswordFromDb() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		password, err := suite.userRepo.GetPasswordFromDb(1)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.Equal(t, "password", password)
+	})
+
+	t.Run("Returns empty string if user does not exists", func(t *testing.T) {
+		password, err := suite.userRepo.GetPasswordFromDb(999)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+		assert.Equal(t, "", password)
+		assert.Empty(t, password)
+	})
+}
+
 func startMySQLContainer(ctx context.Context, t *testing.T) (testcontainers.Container, string, func() (string, error)) {
 	createTablesScriptPath := filepath.Join("..", "..", "sql", "create_tables.sql");
 
