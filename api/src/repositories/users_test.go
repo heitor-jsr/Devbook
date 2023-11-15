@@ -240,6 +240,20 @@ func (suite *UserRepositorySuite) TestGetAll() {
 		assert.IsType(t, []models.User{}, users)
 		assert.Len(t, users, 0)
 	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+
+		users, err := suite.userRepo.GetAll("")
+	
+		assert.Zero(t, users)
+		assert.Panics(t, func() {
+			suite.userRepo.GetAll("")
+		})
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		// assert.Contains(t, err.Error(), "sql: database is closed")
+	})
 }
 
 func (suite *UserRepositorySuite) TestGetById() {
@@ -302,6 +316,9 @@ func (suite *UserRepositorySuite) TestGetByEmail() {
 		user, err := suite.userRepo.GetByEmail("johndoe2@example.com")
 		fmt.Println(user)
 		assert.NoError(t, err)
+		assert.Panics(t, func() {
+			suite.userRepo.GetByEmail("johndoe2@example.com")
+		})
 		assert.IsType(t, models.User{}, user)
 		assert.Exactly(t, user, models.User{
 			Id:    2,
