@@ -21,10 +21,10 @@ CREATE TABLE seguidores (
 
 CREATE TABLE publicacoes(
     id int auto_increment primary key,
-    titulo varchar(50) not null,
-    conteudo varchar(300) not null,
+    titulo varchar(50) NOT NULL CHECK (titulo <> ''),
+    conteudo varchar(300) NOT NULL CHECK (conteudo <> ''),
 
-    autor_id int not null,
+    autor_id int NOT NULL CHECK (autor_id <> ''),
     FOREIGN KEY (autor_id)
     REFERENCES usuarios(id)
     ON DELETE CASCADE,

@@ -111,6 +111,48 @@ func (suite *PublicationsRepositorySuite) TestCreate() {
 		assert.Equal(t, uint64(3), publiCreated)
 	})
 
+	t.Run("Fail when try to create a publication without title", func(t *testing.T) {
+		publication := models.Publication{
+			Content: "Content",
+			AuthorId: 1,
+		}
+
+		publiCreated, err := suite.publiRepo.Create(publication)
+
+		assert.Zero(t, publiCreated)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Error 3819 (HY000): Check constraint 'publicacoes_chk_1' is violated.")
+	})
+
+	t.Run("Fail when try to create a publication without content", func(t *testing.T) {
+		publication := models.Publication{
+			Title:   "Title",
+			AuthorId: 1,
+		}
+
+		publiCreated, err := suite.publiRepo.Create(publication)
+
+		assert.Zero(t, publiCreated)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Error 3819 (HY000): Check constraint 'publicacoes_chk_2' is violated.")
+	})
+
+	t.Run("Fail when try to create a publication without author_id", func(t *testing.T) {
+		publication := models.Publication{
+			Title:   "Title",
+			Content:   "Content",
+		}
+
+		publiCreated, err := suite.publiRepo.Create(publication)
+
+		assert.Zero(t, publiCreated)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Error 3819 (HY000): Check constraint 'publicacoes_chk_3' is violated.")
+	})
+
 	t.Run("Fail when database connection is closed", func(t *testing.T) {
 		suite.db.Close()
 
