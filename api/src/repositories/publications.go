@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/src/models"
 	"database/sql"
+	"time"
 )
 
 // struct que vai receber o nosso banco de dados. a lógica é que a conexão é aberta no controller e repassada para o repository realizar as manipulações no db.
@@ -86,6 +87,7 @@ func (publications *Publications) GetPublications(usuarioID uint64) ([]models.Pu
 	defer lines.Close()
 
 	var newPublications []models.Publication
+	var criadaEmStr string
 	for lines.Next() {
 		var publication models.Publication
 		if erro = lines.Scan(
@@ -94,11 +96,16 @@ func (publications *Publications) GetPublications(usuarioID uint64) ([]models.Pu
 			&publication.Content,
 			&publication.AuthorId,
 			&publication.Likes,
-			&publication.CriadaEm,
+			&criadaEmStr,
 			&publication.AuthorNick,
 		); erro != nil {
 			return nil, erro
 		}
+
+		publication.CriadaEm, erro = time.Parse("2006-01-02 15:04:05", criadaEmStr)
+    if erro != nil {
+        return nil, erro
+    }
 		newPublications = append(newPublications, publication)
 	}
 

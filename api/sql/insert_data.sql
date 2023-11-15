@@ -6,4 +6,10 @@ values
 insert into publicacoes(titulo, conteudo, autor_id)
 values
 ("John Doe Publication", "John Doe Publication Content", 1),
-("John Doe The Second", "John Doe The Second Content", 2)
+("John Doe The Second", "John Doe The Second Content", 2);
+
+
+insert into seguidores(usuario_id, seguidor_id)
+values
+(1, 2),
+(2, 1)

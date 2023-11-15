@@ -4,13 +4,16 @@ import (
 	"api/src/models"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+
+	// "reflect"
 	"strings"
 	"testing"
 
-	// "time"
+	// "bou.ke/monkey"
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +29,14 @@ type PublicationsRepositorySuite struct {
 	container testcontainers.Container
 	dsn       string
 	tx        *sql.Tx
+}
+
+type FakeResult struct {
+	sql.Result
+}
+
+func (f *FakeResult) LastInsertId() (int64, error) {
+	return 0, errors.New("Simulated LastInsertId error")
 }
 
 func (suite *PublicationsRepositorySuite) SetupSuite() {
@@ -66,6 +77,7 @@ func (suite *PublicationsRepositorySuite) SetupSuite() {
 }
 
 func (suite *PublicationsRepositorySuite) SetupTest() {
+	fmt.Println("SetupTest")
 	erro := suite.db.Ping()
 
 	if erro != nil {
@@ -81,6 +93,16 @@ func (suite *PublicationsRepositorySuite) SetupTest() {
 		suite.publiRepo = NewPublicationRepository(db)
 		suite.container = container
 		suite.dsn = dsn
+
+		err = suite.CleanDatabase()
+		if err != nil {
+			suite.T().Fatal(err)
+		}
+
+		err = suite.SeedDatabase()
+		if err != nil {
+			suite.T().Fatal(err)
+		}
 	} else {
 		err := suite.CleanDatabase()
 		if err != nil {
@@ -153,6 +175,27 @@ func (suite *PublicationsRepositorySuite) TestCreate() {
 		assert.Contains(t, err.Error(), "Error 3819 (HY000): Check constraint 'publicacoes_chk_3' is violated.")
 	})
 
+	// t.Run("Fail when try to create a publication without title", func(t *testing.T) {
+  //   monkey.PatchInstanceMethod(reflect.TypeOf(&FakeResult{}), "LastInsertId", func(_ *FakeResult) (int64, error) {
+  //       return 0, errors.New("Simulated LastInsertId error")
+  //   })
+
+  //   publication := models.Publication{
+  //       Title:    "Title",
+  //       Content:  "Content",
+  //       AuthorId: 1,
+  //   }
+
+  //   publiCreated, err := suite.publiRepo.Create(publication)
+
+  //   assert.Zero(t, publiCreated)
+  //   assert.NotNil(t, err)
+  //   assert.Error(t, err)
+  //   assert.Contains(t, err.Error(), "Simulated LastInsertId error")
+  //   defer monkey.UnpatchAll()
+
+	// })
+
 	t.Run("Fail when database connection is closed", func(t *testing.T) {
 		suite.db.Close()
 
@@ -171,255 +214,46 @@ func (suite *PublicationsRepositorySuite) TestCreate() {
 	})
 }
 
-// func (suite *PublicationsRepositorySuite) TestGetAll() {
-// 	t := suite.T()
-// 	t.Run("Success without name filter", func(t *testing.T) {
-// 		users, err := suite.publiRepo.GetAll("")
+func (suite *PublicationsRepositorySuite) TestGetAll() {
+	t := suite.T()
+	t.Run("Success on getting all publications", func(t *testing.T) {
+		publication, err := suite.publiRepo.GetPublications(2)
 
-// 		assert.NotNil(t, users)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, []models.User{}, users)
-// 		assert.Len(t, users, 2)
-// 	})
+		assert.NotNil(t, publication)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.Publication{}, publication)
+		assert.Len(t, publication, 2)
+		assert.ElementsMatch(t, publication, []models.Publication{{
+			Id:         2,
+			Title:      "John Doe The Second",
+			Content:    "John Doe The Second Content",
+			AuthorId:   2,
+			AuthorNick: "johndoe2",
+			Likes:      0,
+			CriadaEm:   publication[0].CriadaEm,
+			}, {
+			Id:         1,
+			Title:      "John Doe Publication",
+			Content:    "John Doe Publication Content",
+			AuthorId:   1,
+			AuthorNick: "johndoe",
+			Likes:      0,
+			CriadaEm:   publication[1].CriadaEm,
+			},
+		})	
+	})
 
-// 	t.Run("Success with name filter", func(t *testing.T) {
-// 		users, err := suite.publiRepo.GetAll("The Second")
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
 
-// 		assert.NotNil(t, users)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, []models.User{}, users)
-// 		assert.Len(t, users, 1)
-// 		assert.Contains(t, users, models.User{
-// 			Id:       2,
-// 			Nome:     "John Doe The Second",
-// 			Nick:     "johndoe2",
-// 			Email:    "johndoe2@example.com",
-// 			CriadoEm: time.Time{},
-// 		})
-// 	})
+		publication, err := suite.publiRepo.GetPublications(2)
 
-// 	t.Run("Fails when the filter doesn't match any user", func(t *testing.T) {
-// 		users, err := suite.publiRepo.GetAll("zzz")
-
-// 		assert.Nil(t, users)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, []models.User{}, users)
-// 		assert.Len(t, users, 0)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestGetById() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		user, err := suite.publiRepo.GetById(2)
-
-// 		assert.NotNil(t, user)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, models.User{}, user)
-// 		assert.Exactly(t, user, models.User{
-// 			Id:       2,
-// 			Nome:     "John Doe The Second",
-// 			Nick:     "johndoe2",
-// 			Email:    "johndoe2@example.com",
-// 			CriadoEm: time.Time{},
-// 		})
-// 	})
-
-// 	t.Run("Fails", func(t *testing.T) {
-// 		user, err := suite.publiRepo.GetById(3)
-
-// 		assert.NotNil(t, err)
-// 		assert.Error(t, err, "no user found with ID: 3")
-// 		assert.IsType(t, models.User{}, user)
-// 		assert.Equal(t, fmt.Errorf("no user found with ID: %d", 3), err)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestUpdate() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		user := models.User{
-// 			Nome:  "John Doe The First",
-// 			Nick:  "johndoefirst",
-// 			Email: "johndoe@example.com",
-// 		}
-
-// 		err := suite.publiRepo.Update(1, user)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-
-// 		userUpdated, err := suite.publiRepo.GetById(1)
-
-// 		assert.IsType(t, models.User{}, userUpdated)
-// 		assert.Exactly(t, userUpdated, models.User{
-// 			Id:       1,
-// 			Nome:     "John Doe The First",
-// 			Nick:     "johndoefirst",
-// 			Email:    "johndoe@example.com",
-// 			CriadoEm: time.Time{},
-// 		})
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestGetByEmail() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		user, err := suite.publiRepo.GetByEmail("johndoe2@example.com")
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, models.User{}, user)
-// 		assert.Exactly(t, user, models.User{
-// 			Id:    2,
-// 			Senha: "password",
-// 		})
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestDelete() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		err := suite.publiRepo.Delete(4)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestFollowUser() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		err := suite.publiRepo.Follow(2, 1)
-
-// 		user, err := suite.publiRepo.GetFollowers(1)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, []models.User{}, user)
-// 		assert.Contains(t, user, models.User{
-// 			Id:       2,
-// 			Nome:     "John Doe The Second",
-// 			Nick:     "johndoe2",
-// 			Email:    "johndoe2@example.com",
-// 			CriadoEm: time.Time{},
-// 		})
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestUnfollowUser() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		err := suite.publiRepo.Follow(2, 1)
-
-// 		err2 := suite.publiRepo.Unfollow(2, 1)
-
-// 		user, err := suite.publiRepo.GetFollowers(1)
-
-// 		assert.Nil(t, err2, err)
-// 		assert.NoError(t, err2, err)
-// 		assert.IsType(t, []models.User{}, user)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestGetFollowers() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		err := suite.publiRepo.Follow(2, 1)
-
-// 		user, err := suite.publiRepo.GetFollowers(1)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, []models.User{}, user)
-// 		assert.Contains(t, user, models.User{
-// 			Id:       2,
-// 			Nome:     "John Doe The Second",
-// 			Nick:     "johndoe2",
-// 			Email:    "johndoe2@example.com",
-// 			CriadoEm: time.Time{},
-// 		})
-// 	})
-
-// 	t.Run("Returns nil if user has no followers", func(t *testing.T) {
-// 		user, err := suite.publiRepo.GetFollowers(2)
-
-// 		assert.IsType(t, []models.User{}, user)
-// 		assert.Empty(t, user)
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestGetFollowing() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		err := suite.publiRepo.Follow(2, 1)
-
-// 		user, err := suite.publiRepo.GetFollowing(2)
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 		assert.IsType(t, []models.User{}, user)
-// 		assert.Contains(t, user, models.User{
-// 			Id:       1,
-// 			Nome:     "John Doe",
-// 			Nick:     "johndoe",
-// 			Email:    "johndoe@example.com",
-// 			CriadoEm: time.Time{},
-// 		})
-// 	})
-
-// 	t.Run("Returns nil if user does not follow anyone", func(t *testing.T) {
-// 		user, err := suite.publiRepo.GetFollowing(1)
-
-// 		assert.IsType(t, []models.User{}, user)
-// 		assert.Empty(t, user)
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestGetPasswordFromDb() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		password, err := suite.publiRepo.GetPasswordFromDb(1)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, "password", password)
-// 	})
-
-// 	t.Run("Returns empty string if user does not exists", func(t *testing.T) {
-// 		password, err := suite.publiRepo.GetPasswordFromDb(999)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, "", password)
-// 		assert.Empty(t, password)
-// 	})
-// }
-
-// func (suite *PublicationsRepositorySuite) TestChangePassword() {
-// 	t := suite.T()
-// 	t.Run("Success", func(t *testing.T) {
-// 		err := suite.publiRepo.ChangePassword(1, "passwordChanged")
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-
-// 		password, err := suite.publiRepo.GetPasswordFromDb(1)
-
-// 		assert.Equal(t, "passwordChanged", password)
-// 	})
-
-// 	t.Run("Returns empty string if user does not exists", func(t *testing.T) {
-// 		password, err := suite.publiRepo.GetPasswordFromDb(999)
-
-// 		assert.Nil(t, err)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, "", password)
-// 		assert.Empty(t, password)
-// 	})
-// }
-
+		assert.Zero(t, publication)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
+}
 
 func (suite *PublicationsRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
@@ -449,6 +283,7 @@ func (suite *PublicationsRepositorySuite) SeedDatabase() error {
 }
 
 func (suite *PublicationsRepositorySuite) CleanDatabase() error {
+	fmt.Println("Cleaning database...")
 	_, err := suite.db.ExecContext(context.Background(), "DELETE FROM usuarios")
 	if err != nil {
 		return err

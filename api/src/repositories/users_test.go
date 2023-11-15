@@ -66,6 +66,8 @@ func (suite *UserRepositorySuite) SetupSuite() {
 }
 
 func (suite *UserRepositorySuite) SetupTest() {
+	fmt.Println("SetUpTest...")
+
 	erro := suite.db.Ping()
 
 	if erro != nil {
@@ -81,6 +83,16 @@ func (suite *UserRepositorySuite) SetupTest() {
 		suite.userRepo = NewUsersRepository(db)
 		suite.container = container
 		suite.dsn = dsn
+
+		err = suite.CleanDatabase()
+		if err != nil {
+			suite.T().Fatal(err)
+		}
+
+		err = suite.SeedDatabase()
+		if err != nil {
+			suite.T().Fatal(err)
+		}
 	} else {
 		err := suite.CleanDatabase()
 		if err != nil {
@@ -374,7 +386,7 @@ func (suite *UserRepositorySuite) TestGetFollowers() {
 	})
 
 	t.Run("Returns nil if user has no followers", func(t *testing.T) {
-		user, err := suite.userRepo.GetFollowers(2)
+		user, err := suite.userRepo.GetFollowers(3)
 
 		assert.IsType(t, []models.User{}, user)
 		assert.Empty(t, user)
@@ -402,7 +414,7 @@ func (suite *UserRepositorySuite) TestGetFollowing() {
 	})
 
 	t.Run("Returns nil if user does not follow anyone", func(t *testing.T) {
-		user, err := suite.userRepo.GetFollowing(1)
+		user, err := suite.userRepo.GetFollowing(3)
 
 		assert.IsType(t, []models.User{}, user)
 		assert.Empty(t, user)
