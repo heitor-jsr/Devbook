@@ -332,6 +332,25 @@ func (suite *PublicationsRepositorySuite) TestUpdate() {
 	})
 }
 
+func (suite *PublicationsRepositorySuite) TestDelete() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		err := suite.publiRepo.Delete(1)
+
+		assert.Nil(t, err)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+		err := suite.publiRepo.Delete(1)
+
+
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
+}
 
 func (suite *PublicationsRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
