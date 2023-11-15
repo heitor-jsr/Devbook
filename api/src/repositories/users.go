@@ -27,7 +27,6 @@ func (u Usuarios) Create(usuario models.User) (uint64, error) {
 
 	res, erro := stmt.Exec(usuario.Nome, usuario.Nick, usuario.Email, usuario.Senha)
 	if erro != nil {
-		fmt.Println(erro)
 		return 0, erro
 	}
 
@@ -43,6 +42,10 @@ func (u Usuarios) Create(usuario models.User) (uint64, error) {
 // traz todos os usuarios que atendem a um filtro de nome ou nick.
 func (u Usuarios) GetAll(nameOrNick string) ([]models.User, error) {
 	nameOrNick = fmt.Sprintf("%%%s%%", nameOrNick)
+
+	if nameOrNick == "%%" {
+    nameOrNick = ""
+	}
 
 	var users []models.User
 

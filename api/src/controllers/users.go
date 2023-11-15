@@ -9,7 +9,6 @@ import (
 	"api/src/security"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -55,8 +54,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	// como sabemos, para capturar o parametro de busca de uma rota, precisamos primeiro capturar ele de forma dinâmica. parra isso, usamos o query string, que em go é feito da maneira abaixo.
 	nameOrNick := strings.ToLower(r.URL.Query().Get("users"))
-
-	fmt.Println(len(nameOrNick))
 
 	db, erro := database.Connect()
 	if erro != nil {

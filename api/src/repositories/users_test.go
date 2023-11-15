@@ -31,7 +31,6 @@ type UserRepositorySuite struct {
 func (suite *UserRepositorySuite) SetupSuite() {
 	ctx := context.Background()
 	container, dsn, teardown := startMySQLContainer(ctx, suite.T())
-
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 			suite.T().Fatal(err)
@@ -67,14 +66,31 @@ func (suite *UserRepositorySuite) SetupSuite() {
 }
 
 func (suite *UserRepositorySuite) SetupTest() {
-	err := suite.CleanDatabase()
-	if err != nil {
-			suite.T().Fatal(err)
-	}
+	erro := suite.db.Ping()
 
-	err = suite.SeedDatabase()
-	if err != nil {
-			suite.T().Fatal(err)
+	if erro != nil {
+		ctx := context.Background()
+		container, dsn, _ := startMySQLContainer(ctx, suite.T())
+	
+		db, err := sql.Open("mysql", dsn)
+		if err != nil {
+				suite.T().Fatal(err)
+		}
+	
+		suite.db = db
+		suite.userRepo = NewUsersRepository(db)
+		suite.container = container
+		suite.dsn = dsn
+		} else {
+		err := suite.CleanDatabase()
+		if err != nil {
+				suite.T().Fatal(err)
+		}
+	
+		err = suite.SeedDatabase()
+		if err != nil {
+				suite.T().Fatal(err)
+		}
 	}
 }
 
@@ -169,6 +185,24 @@ func (suite *UserRepositorySuite) TestCreate() {
 		assert.Error(t, err)
 		assert.Equal(t, uint64(0), userID)
 	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+
+		user := models.User{
+			Nome:  "User Name",
+			Nick:  "username",
+			Email: "username@example.com",
+			Senha: "password",
+		}
+	
+		userID, err := suite.userRepo.Create(user)
+	
+		assert.Zero(t, userID)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
 }
 
 func (suite *UserRepositorySuite) TestGetAll() {
@@ -262,6 +296,20 @@ func (suite *UserRepositorySuite) TestUpdate() {
 	})
 }
 
+func (suite *UserRepositorySuite) TestGetByEmail() {
+	t := suite.T()
+	t.Run("Success", func(t *testing.T) {
+		user, err := suite.userRepo.GetByEmail("johndoe2@example.com")
+		fmt.Println(user)
+		assert.NoError(t, err)
+		assert.IsType(t, models.User{}, user)
+		assert.Exactly(t, user, models.User{
+			Id:    2,
+			Senha: "password",
+		})
+	})
+}
+
 func (suite *UserRepositorySuite) TestDelete() {
 	t := suite.T()
 	t.Run("Success", func(t *testing.T) {
@@ -269,21 +317,6 @@ func (suite *UserRepositorySuite) TestDelete() {
 
 		assert.Nil(t, err)
 		assert.NoError(t, err)
-	})
-}
-
-func (suite *UserRepositorySuite) TestGetByEmail() {
-	t := suite.T()
-	t.Run("Success", func(t *testing.T) {
-		user, err := suite.userRepo.GetByEmail("johndoe2@example.com")
-
-		assert.Nil(t, err)
-		assert.NoError(t, err)
-		assert.IsType(t, models.User{}, user)
-		assert.Exactly(t, user, models.User{
-			Id:    2,
-			Senha: "password",
-		})
 	})
 }
 
