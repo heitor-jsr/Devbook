@@ -51,7 +51,9 @@ func (publications *Publications) GetPublicationById(publicationId uint64) (mode
 
 	defer lines.Close()
 
+	var criadaEmStr string
 	var publication models.Publication
+	
 	if lines.Next() {
 		if erro = lines.Scan(
 			&publication.Id,
@@ -59,9 +61,13 @@ func (publications *Publications) GetPublicationById(publicationId uint64) (mode
 			&publication.Content,
 			&publication.AuthorId,
 			&publication.Likes,
-			&publication.CriadaEm,
+			&criadaEmStr,
 			&publication.AuthorNick,
 		); erro != nil {
+			return models.Publication{}, erro
+		}
+		publication.CriadaEm, erro = time.Parse("2006-01-02 15:04:05", criadaEmStr)
+		if erro != nil {
 			return models.Publication{}, erro
 		}
 	}

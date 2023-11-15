@@ -255,6 +255,38 @@ func (suite *PublicationsRepositorySuite) TestGetAll() {
 	})
 }
 
+func (suite *PublicationsRepositorySuite) TestGetById() {
+	t := suite.T()
+	t.Run("Success on getting the publication by id", func(t *testing.T) {
+		publication, err := suite.publiRepo.GetPublicationById(2)
+
+		assert.NotNil(t, publication)
+		assert.NoError(t, err)
+		assert.IsType(t, models.Publication{}, publication)
+		assert.ObjectsAreEqualValues(publication, models.Publication{
+			Id:         2,
+			Title:      "John Doe The Second",
+			Content:    "John Doe The Second Content",
+			AuthorId:   2,
+			AuthorNick: "johndoe2",
+			Likes:      0,
+			CriadaEm:   publication.CriadaEm,
+			},
+		)	
+	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+
+		publication, err := suite.publiRepo.GetPublicationById(2)
+
+		assert.Zero(t, publication)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
+}
+
 func (suite *PublicationsRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
 	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
