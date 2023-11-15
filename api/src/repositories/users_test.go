@@ -306,6 +306,22 @@ func (suite *UserRepositorySuite) TestUpdate() {
 			CriadoEm: time.Time{},
 		})
 	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+
+		user := models.User{
+			Nome:  "John Doe The First",
+			Nick:  "johndoefirst",
+			Email: "johndoe@example.com",
+		}
+
+		err := suite.userRepo.Update(2, user)
+
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
 }
 
 func (suite *UserRepositorySuite) TestGetByEmail() {
