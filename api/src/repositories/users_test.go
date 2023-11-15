@@ -345,6 +345,16 @@ func (suite *UserRepositorySuite) TestDelete() {
 		assert.Nil(t, err)
 		assert.NoError(t, err)
 	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+		err := suite.userRepo.Delete(3)
+
+
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
 }
 
 func (suite *UserRepositorySuite) TestFollowUser() {
