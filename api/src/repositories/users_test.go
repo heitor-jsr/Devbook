@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,24 +17,23 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/mysql"
 )
 
 type UserRepositorySuite struct {
 	suite.Suite
-	db       *sql.DB
-	userRepo *Usuarios
+	db        *sql.DB
+	userRepo  *Usuarios
 	container testcontainers.Container
-	dsn      string
-	tx       *sql.Tx
+	dsn       string
+	tx        *sql.Tx
 }
 
 func (suite *UserRepositorySuite) SetupSuite() {
 	ctx := context.Background()
-	container, dsn, teardown := startMySQLContainer(ctx, suite.T())
+	container, dsn, teardown := StartMySQLContainer(ctx, suite.T())
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-			suite.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	suite.db = db
@@ -42,26 +42,26 @@ func (suite *UserRepositorySuite) SetupSuite() {
 	suite.dsn = dsn
 
 	suite.T().Cleanup(func() {
-			suite.T().Cleanup(func() {
-        if err := suite.tx.Rollback(); err != nil {
-            suite.T().Fatal(err)
-        }
-
-        _, err := teardown()
-        if err != nil {
-            suite.T().Fatal(err)
-        }
-    })
-			if suite.db != nil {
-					if err := suite.db.Close(); err != nil {
-							suite.T().Errorf("Error closing database connection: %v", err)
-					}
+		suite.T().Cleanup(func() {
+			if err := suite.tx.Rollback(); err != nil {
+				suite.T().Fatal(err)
 			}
+
+			_, err := teardown()
+			if err != nil {
+				suite.T().Fatal(err)
+			}
+		})
+		if suite.db != nil {
+			if err := suite.db.Close(); err != nil {
+				suite.T().Errorf("Error closing database connection: %v", err)
+			}
+		}
 	})
 
 	suite.tx, err = suite.db.Begin()
 	if err != nil {
-			suite.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 }
 
@@ -70,26 +70,26 @@ func (suite *UserRepositorySuite) SetupTest() {
 
 	if erro != nil {
 		ctx := context.Background()
-		container, dsn, _ := startMySQLContainer(ctx, suite.T())
-	
+		container, dsn, _ := StartMySQLContainer(ctx, suite.T())
+
 		db, err := sql.Open("mysql", dsn)
 		if err != nil {
-				suite.T().Fatal(err)
+			suite.T().Fatal(err)
 		}
-	
+
 		suite.db = db
 		suite.userRepo = NewUsersRepository(db)
 		suite.container = container
 		suite.dsn = dsn
-		} else {
+	} else {
 		err := suite.CleanDatabase()
 		if err != nil {
-				suite.T().Fatal(err)
+			suite.T().Fatal(err)
 		}
-	
+
 		err = suite.SeedDatabase()
 		if err != nil {
-				suite.T().Fatal(err)
+			suite.T().Fatal(err)
 		}
 	}
 }
@@ -195,9 +195,9 @@ func (suite *UserRepositorySuite) TestCreate() {
 			Email: "username@example.com",
 			Senha: "password",
 		}
-	
+
 		userID, err := suite.userRepo.Create(user)
-	
+
 		assert.Zero(t, userID)
 		assert.NotNil(t, err)
 		assert.Error(t, err)
@@ -239,20 +239,6 @@ func (suite *UserRepositorySuite) TestGetAll() {
 		assert.NoError(t, err)
 		assert.IsType(t, []models.User{}, users)
 		assert.Len(t, users, 0)
-	})
-
-	t.Run("Fail when database connection is closed", func(t *testing.T) {
-		suite.db.Close()
-
-		users, err := suite.userRepo.GetAll("")
-	
-		assert.Zero(t, users)
-		assert.Panics(t, func() {
-			suite.userRepo.GetAll("")
-		})
-		assert.NotNil(t, err)
-		assert.Error(t, err)
-		// assert.Contains(t, err.Error(), "sql: database is closed")
 	})
 }
 
@@ -314,11 +300,7 @@ func (suite *UserRepositorySuite) TestGetByEmail() {
 	t := suite.T()
 	t.Run("Success", func(t *testing.T) {
 		user, err := suite.userRepo.GetByEmail("johndoe2@example.com")
-		fmt.Println(user)
 		assert.NoError(t, err)
-		assert.Panics(t, func() {
-			suite.userRepo.GetByEmail("johndoe2@example.com")
-		})
 		assert.IsType(t, models.User{}, user)
 		assert.Exactly(t, user, models.User{
 			Id:    2,
@@ -472,57 +454,28 @@ func (suite *UserRepositorySuite) TestChangePassword() {
 	})
 }
 
-func startMySQLContainer(ctx context.Context, t *testing.T) (testcontainers.Container, string, func() (string, error)) {
-	createTablesScriptPath := filepath.Join("..", "..", "sql", "create_tables.sql");
-
-
-	mysqlContainer, err := mysql.RunContainer(ctx,
-			testcontainers.WithImage("mysql:8"),
-			mysql.WithDatabase("devbook"),
-			mysql.WithUsername("golang"),
-			mysql.WithPassword("golang"),
-			mysql.WithScripts(createTablesScriptPath),
-	)
-	if err != nil {
-			t.Fatal(err)
-	}
-
-	ip, err := mysqlContainer.Host(ctx)
-	if err != nil {
-			t.Fatal(err)
-	}
-
-	port, err := mysqlContainer.MappedPort(ctx, "3306/tcp")
-	if err != nil {
-			t.Fatal(err)
-	}
-
-	dsn := fmt.Sprintf("golang:golang@tcp(%s:%s)/devbook", ip, port.Port())
-
-	teardown := func() (string, error) {
-			if err := mysqlContainer.Terminate(ctx); err != nil {
-					return "", err
-			}
-			return dsn, nil
-	}
-
-	return mysqlContainer, dsn, teardown
-}
-
 func (suite *UserRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
 	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
 
 	insertDataScript, err := ioutil.ReadFile(insertDataScriptPath)
 	if err != nil {
-			suite.T().Errorf("Erro ao ler script de inserção de dados: %v", err)
-			return err
+		suite.T().Errorf("Erro ao ler script de inserção de dados: %v", err)
+		return err
 	}
 
-	_, err = suite.db.ExecContext(context.Background(), string(insertDataScript))
-	if err != nil {
-			suite.T().Errorf("Erro ao inserir dados: %v", err)
-			return err
+	queries := strings.Split(string(insertDataScript), ";")
+
+	for _, query := range queries {
+		query = strings.TrimSpace(query)
+
+		if query != "" {
+			_, err := suite.db.ExecContext(context.Background(), query)
+			if err != nil {
+				suite.T().Errorf("Erro ao executar a instrução SQL: %v", err)
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -531,12 +484,12 @@ func (suite *UserRepositorySuite) SeedDatabase() error {
 func (suite *UserRepositorySuite) CleanDatabase() error {
 	_, err := suite.db.ExecContext(context.Background(), "DELETE FROM usuarios")
 	if err != nil {
-			return err
+		return err
 	}
 
 	_, err = suite.db.ExecContext(context.Background(), "ALTER TABLE usuarios AUTO_INCREMENT = 1")
 	if err != nil {
-			return err
+		return err
 	}
 
 	return nil

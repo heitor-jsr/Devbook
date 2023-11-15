@@ -6,15 +6,15 @@ import (
 )
 
 // struct que vai receber o nosso banco de dados. a lógica é que a conexão é aberta no controller e repassada para o repository realizar as manipulações no db.
-type publications struct {
+type Publications struct {
 	db *sql.DB
 }
 
-func NewPublicationRepository(db *sql.DB) *publications {
-	return &publications{db}
+func NewPublicationRepository(db *sql.DB) *Publications {
+	return &Publications{db}
 }
 
-func (publications *publications) Create(publication models.Publication) (uint64, error) { 
+func (publications *Publications) Create(publication models.Publication) (uint64, error) { 
 	statement, erro := publications.db.Prepare(
 		"insert into publicacoes (titulo, conteudo, autor_id) values (?, ?, ?)")
 	if erro != nil {
@@ -36,7 +36,7 @@ func (publications *publications) Create(publication models.Publication) (uint64
 	return uint64(publicationId), nil
 }
 
-func (publications *publications) GetPublicationById(publicationId uint64) (models.Publication, error) { 
+func (publications *Publications) GetPublicationById(publicationId uint64) (models.Publication, error) { 
 	lines, erro := publications.db.Query(
 		`select p.*, u.nick from 
 		publicacoes p inner join usuarios u
@@ -69,7 +69,7 @@ func (publications *publications) GetPublicationById(publicationId uint64) (mode
 }
 
 // vai retornar todas as publicações dos usuários que ele segue e todas as publicações pŕoprias dele.
-func (publications *publications) GetPublications(usuarioID uint64) ([]models.Publication, error) { 
+func (publications *Publications) GetPublications(usuarioID uint64) ([]models.Publication, error) { 
 	lines, erro := publications.db.Query(`
 	select distinct p.*, u.nick from publicacoes p 
 	inner join usuarios u on u.id = p.autor_id 
@@ -105,7 +105,7 @@ func (publications *publications) GetPublications(usuarioID uint64) ([]models.Pu
 	return newPublications, nil
 }
 
-func (publications *publications) Update(publicationId uint64, pupublication models.Publication) (error) { 
+func (publications *Publications) Update(publicationId uint64, pupublication models.Publication) (error) { 
 	statement, erro := publications.db.Prepare(
 		"update publicacoes set titulo = ?, conteudo = ? where id = ?")
 	if erro != nil {
@@ -121,7 +121,7 @@ func (publications *publications) Update(publicationId uint64, pupublication mod
 	return nil
 }
 
-func (publications *publications) Delete(publicationId uint64) (error) { 
+func (publications *Publications) Delete(publicationId uint64) (error) { 
 	statement, erro := publications.db.Prepare(
 		"delete from publicacoes where id = ?",
 	)
@@ -138,7 +138,7 @@ func (publications *publications) Delete(publicationId uint64) (error) {
 	return nil
 }
 
-func (publications *publications) GetPublicationFromUser(userId uint64) ([]models.Publication, error) {
+func (publications *Publications) GetPublicationFromUser(userId uint64) ([]models.Publication, error) {
 	lines, erro := publications.db.Query(`
 	select p.*, u.nick from publicacoes p
 	inner join usuarios u on u.id = p.autor_id
@@ -172,7 +172,7 @@ func (publications *publications) GetPublicationFromUser(userId uint64) ([]model
 	return newPublications, nil
 }
 
-func (publications *publications) LikePublication(publicationId uint64) (error) {
+func (publications *Publications) LikePublication(publicationId uint64) (error) {
 	statement, erro := publications.db.Prepare(
 		"update publicacoes set curtidas = curtidas + 1 where id = ?",
 	)
@@ -189,7 +189,7 @@ func (publications *publications) LikePublication(publicationId uint64) (error) 
 	return nil
 }
 
-func (publications *publications) DeslikePublication(publicationId uint64) (error) {
+func (publications *Publications) DeslikePublication(publicationId uint64) (error) {
 	statement, erro := publications.db.Prepare(
 		"update publicacoes set curtidas = case when curtidas > 0 then curtidas - 1 else curtidas end where id = ?",
 	)
