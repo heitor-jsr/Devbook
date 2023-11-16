@@ -166,6 +166,8 @@ func (publications *Publications) GetPublicationFromUser(userId uint64) ([]model
 	defer lines.Close()
 
 	var newPublications []models.Publication
+	var criadaEmStr string
+
 	for lines.Next() {
 		var publication models.Publication
 		if erro = lines.Scan(
@@ -174,9 +176,13 @@ func (publications *Publications) GetPublicationFromUser(userId uint64) ([]model
 			&publication.Content,
 			&publication.AuthorId,
 			&publication.Likes,
-			&publication.CriadaEm,
+			&criadaEmStr,
 			&publication.AuthorNick,
 		); erro != nil {
+			return nil, erro
+		}
+		publication.CriadaEm, erro = time.Parse("2006-01-02 15:04:05", criadaEmStr)
+		if erro != nil {
 			return nil, erro
 		}
 		newPublications = append(newPublications, publication)

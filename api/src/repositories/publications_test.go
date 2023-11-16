@@ -352,6 +352,38 @@ func (suite *PublicationsRepositorySuite) TestDelete() {
 	})
 }
 
+func (suite *PublicationsRepositorySuite) TestGetPublicationFromUser() {
+	t := suite.T()
+	t.Run("Success on getting the publication by user id", func(t *testing.T) {
+		publication, err := suite.publiRepo.GetPublicationFromUser(2)
+
+		assert.NotNil(t, publication)
+		assert.NoError(t, err)
+		assert.IsType(t, []models.Publication{}, publication)
+		assert.ElementsMatch(t, publication, []models.Publication{{
+			Id:         2,
+			Title:      "John Doe The Second",
+			Content:    "John Doe The Second Content",
+			AuthorId:   2,
+			AuthorNick: "johndoe2",
+			Likes:      0,
+			CriadaEm:   publication[0].CriadaEm,
+			},
+		})
+	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+
+		publication, err := suite.publiRepo.GetPublicationFromUser(2)
+
+		assert.Zero(t, publication)
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
+}
+
 func (suite *PublicationsRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
 	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
