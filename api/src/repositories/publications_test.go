@@ -386,7 +386,7 @@ func (suite *PublicationsRepositorySuite) TestGetPublicationFromUser() {
 
 func (suite *PublicationsRepositorySuite) TestLikePublication() {
 	t := suite.T()
-	t.Run("Success on updating the publication", func(t *testing.T) {
+	t.Run("Success on liking the publication", func(t *testing.T) {
 		err := suite.publiRepo.LikePublication(2)
 
 		publicationLiked, err := suite.publiRepo.GetPublicationById(2)
@@ -401,6 +401,71 @@ func (suite *PublicationsRepositorySuite) TestLikePublication() {
 			AuthorId:   2,
 			AuthorNick: "johndoe2",
 			Likes:      1,
+			CriadaEm:   publicationLiked.CriadaEm,
+			},
+		)	
+	})
+
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		suite.db.Close()
+
+
+		err := suite.publiRepo.LikePublication(2)
+
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sql: database is closed")
+	})
+}
+
+func (suite *PublicationsRepositorySuite) TestDeslikePublication() {
+	t := suite.T()
+	t.Run("Success on desliking the publication", func(t *testing.T) {
+		err := suite.publiRepo.LikePublication(2)
+
+		err = suite.publiRepo.LikePublication(2)
+
+		err = suite.publiRepo.DeslikePublication(2)
+
+		publicationLiked, err := suite.publiRepo.GetPublicationById(2)
+
+		assert.NotNil(t, publicationLiked)
+		assert.NoError(t, err)
+		assert.IsType(t, models.Publication{}, publicationLiked)
+		assert.ObjectsAreEqualValues(publicationLiked, models.Publication{
+			Id:         2,
+			Title:      "John Doe The Second",
+			Content:    "John Doe The Second Content Updated",
+			AuthorId:   2,
+			AuthorNick: "johndoe2",
+			Likes:      1,
+			CriadaEm:   publicationLiked.CriadaEm,
+			},
+		)
+	})
+
+	t.Run("Success on desliking the publication until the likes become 0 and ensure it doesnt go below that", func(t *testing.T) {
+		err := suite.publiRepo.LikePublication(2)
+
+		err = suite.publiRepo.LikePublication(2)
+
+		err = suite.publiRepo.DeslikePublication(2)
+		err = suite.publiRepo.DeslikePublication(2)
+		err = suite.publiRepo.DeslikePublication(2)
+		err = suite.publiRepo.DeslikePublication(2)
+
+		publicationLiked, err := suite.publiRepo.GetPublicationById(2)
+
+		assert.NotNil(t, publicationLiked)
+		assert.NoError(t, err)
+		assert.IsType(t, models.Publication{}, publicationLiked)
+		assert.ObjectsAreEqualValues(publicationLiked, models.Publication{
+			Id:         2,
+			Title:      "John Doe The Second",
+			Content:    "John Doe The Second Content Updated",
+			AuthorId:   2,
+			AuthorNick: "johndoe2",
+			Likes:      0,
 			CriadaEm:   publicationLiked.CriadaEm,
 			},
 		)	
