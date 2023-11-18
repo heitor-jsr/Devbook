@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api/config"
 	"api/src/auth"
 	"api/src/database"
 	"api/src/models"
@@ -8,11 +9,16 @@ import (
 	"api/src/responses"
 	"api/src/security"
 	"encoding/json"
+	"fmt"
 
 	// "io"
 	"net/http"
 	"strconv"
 )
+
+func init () {
+	config.Load()
+}
 
 // a lógica do login é a seguinte: recebemos uma req com email e senha, verificamos se o usuario existe, se existe, verificamos se a senha comparada com o hash que tá no db é a correta e, se tudo estiver correto, retornamos um token de acesso. com isso o usuário estará logado no sistema.
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +28,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
-
 	db, erro := database.Connect()
 	if erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
@@ -38,8 +43,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println(userFromDB)
+
 	// o primeiro parametro é a senha do banco com o hash, e a segunda é a senha que o usuario passou ao tentar fazer o login.
 	if erro = security.VerifyPassword(userFromDB.Senha, user.Senha); erro != nil {
+		fmt.Println("Error verifying password:", erro)
 		responses.Erro(w, http.StatusUnauthorized, erro)
 		return
 	}
@@ -50,6 +58,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	usuarioID := strconv.FormatUint(userFromDB.Id, 10)
-
+	fmt.Println("Before responses.JSON")
 	responses.JSON(w, http.StatusOK, models.AuthenticationData{ID: usuarioID, Token: token})
 }
