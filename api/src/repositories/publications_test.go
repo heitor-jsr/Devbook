@@ -356,7 +356,6 @@ func (suite *PublicationsRepositorySuite) TestGetPublicationFromUser() {
 	t := suite.T()
 	t.Run("Success on getting the publication by user id", func(t *testing.T) {
 		publication, err := suite.publiRepo.GetPublicationFromUser(2)
-
 		assert.NotNil(t, publication)
 		assert.NoError(t, err)
 		assert.IsType(t, []models.Publication{}, publication)

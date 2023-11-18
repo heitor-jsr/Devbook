@@ -332,7 +332,7 @@ func (suite *UserRepositorySuite) TestGetByEmail() {
 		assert.IsType(t, models.User{}, user)
 		assert.Exactly(t, user, models.User{
 			Id:    2,
-			Senha: "password",
+			Senha: "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG",
 		})
 	})
 }
@@ -456,7 +456,7 @@ func (suite *UserRepositorySuite) TestGetPasswordFromDb() {
 
 		assert.Nil(t, err)
 		assert.NoError(t, err)
-		assert.Equal(t, "password", password)
+		assert.Equal(t, "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG", password)
 	})
 
 	t.Run("Returns empty string if user does not exists", func(t *testing.T) {
