@@ -1,7 +1,7 @@
 insert into usuarios (nome, nick, email, senha)
 values
-("John Doe", "johndoe", "johndoe@example.com", "password"),
-("John Doe The Second", "johndoe2", "johndoe2@example.com", "password");
+("John Doe", "johndoe", "johndoe@example.com", "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG"),
+("John Doe The Second", "johndoe2", "johndoe2@example.com", "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG");
 
 insert into publicacoes(titulo, conteudo, autor_id)
 values

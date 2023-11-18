@@ -1,8 +1,8 @@
 insert into usuarios (nome, nick, email, senha)
 values
-("Usuário 1", "usuario_1", "usuario1@gmail.com", "$2a$10$0iGYlKCAYTyJV/vC6nLGgeWFwD6AhSkWLsVRO/.M4lNK8OtIkfggy"), -- usuario1
-("Usuário 2", "usuario_2", "usuario2@gmail.com", "$2a$10$0iGYlKCAYTyJV/vC6nLGgeWFwD6AhSkWLsVRO/.M4lNK8OtIkfggy"), -- usuario2
-("Usuário 3", "usuario_3", "usuario3@gmail.com", "$2a$10$0iGYlKCAYTyJV/vC6nLGgeWFwD6AhSkWLsVRO/.M4lNK8OtIkfggy"); -- usuario3, senha 123456
+("John Doe", "johndoe", "johndoe@example.com", "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG"),
+("John Doe The Second", "johndoe2", "johndoe2@example.com", "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG"),
+("John Doe The Third", "johndoe3", "johndoe3@example.com", "$2a$10$zMai6Qa5Gyoz3u2HiNWQ7uUOG2IvxttyVITFoBCuj0Lem794QluHG");
 
 insert into seguidores(usuario_id, seguidor_id)
 values
