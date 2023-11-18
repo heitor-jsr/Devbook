@@ -108,7 +108,7 @@ func (publications *Publications) GetPublications(usuarioID uint64) ([]models.Pu
 			return nil, erro
 		}
 
-		publication.CriadaEm, erro = time.Parse("2006-01-02 15:04:05", criadaEmStr)
+		publication.CriadaEm, erro = time.Parse("2006-01-02T15:04:05Z", criadaEmStr)
     if erro != nil {
         return nil, erro
     }
@@ -181,7 +181,7 @@ func (publications *Publications) GetPublicationFromUser(userId uint64) ([]model
 		); erro != nil {
 			return nil, erro
 		}
-		publication.CriadaEm, erro = time.Parse("2006-01-02 15:04:05", criadaEmStr)
+		publication.CriadaEm, erro = time.Parse("2006-01-02T15:04:05Z", criadaEmStr)
 		if erro != nil {
 			return nil, erro
 		}
