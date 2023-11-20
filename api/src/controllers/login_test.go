@@ -25,7 +25,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 )
 
-type UserRepositorySuite struct {
+type TestRepositorySuite struct {
 	suite.Suite
 	db        *sql.DB
 	userRepo  *repositories.Usuarios
@@ -34,7 +34,7 @@ type UserRepositorySuite struct {
 	tx        *sql.Tx
 }
 
-func (suite *UserRepositorySuite) SetupSuite() {
+func (suite *TestRepositorySuite) SetupSuite() {
 	envPath := "/home/dornzak/devbook/api/.env"
 	if err := godotenv.Load(envPath); err != nil {
 			log.Fatal(err)
@@ -86,7 +86,7 @@ func (suite *UserRepositorySuite) SetupSuite() {
 	}
 }
 
-func (suite *UserRepositorySuite) SetupTest() {
+func (suite *TestRepositorySuite) SetupTest() {
 	fmt.Println("SetUpTest...")
 
 	erro := suite.db.Ping()
@@ -127,7 +127,7 @@ func (suite *UserRepositorySuite) SetupTest() {
 	}
 }
 
-func (suite *UserRepositorySuite) SeedDatabase() error {
+func (suite *TestRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
 	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
 
@@ -154,7 +154,7 @@ func (suite *UserRepositorySuite) SeedDatabase() error {
 	return nil
 }
 
-func (suite *UserRepositorySuite) CleanDatabase() error {
+func (suite *TestRepositorySuite) CleanDatabase() error {
 	_, err := suite.db.ExecContext(context.Background(), "DELETE FROM usuarios")
 	if err != nil {
 		return err
@@ -168,9 +168,9 @@ func (suite *UserRepositorySuite) CleanDatabase() error {
 	return nil
 }
 
-func (suite *UserRepositorySuite) TestLogin() {
+func (suite *TestRepositorySuite) TestLogin() {
 	t := suite.T()
-	t.Run("Success on decoding the login request", func(t *testing.T) {
+	t.Run("Success on login", func(t *testing.T) {
 	loginRequestBody := `{"email": "johndoe@example.com", "senha": "123456"}`
 
 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
@@ -191,8 +191,62 @@ func (suite *UserRepositorySuite) TestLogin() {
 	assert.NotEmpty(t, authData.ID)
 	assert.NotEmpty(t, authData.Token)
 	})
+
+	t.Run("Fail when request boyd is invalid", func(t *testing.T) {
+		invalidRequestBody := "invalid_json"
+		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(invalidRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+	
+		rr := httptest.NewRecorder()
+		
+		controllers.Login(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		expectedResponseBody := "{\"erro\":\"invalid character 'i' looking for beginning of value\"}\n"
+		assert.Equal(t, expectedResponseBody, rr.Body.String())
+	
+	})
+
+	t.Run("Fail when user email is not found", func(t *testing.T) {
+		loginRequestBody := `{"email": "johndoe123@example.com", "senha": "123456"}`
+		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+	
+		rr := httptest.NewRecorder()
+		
+		controllers.Login(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+
+		expectedResponseBody := "{\"erro\":\"user with email johndoe123@example.com not found\"}\n"
+
+		assert.Equal(t, expectedResponseBody, rr.Body.String())
+	})
+
+	t.Run("Fail when user password is incorrect", func(t *testing.T) {
+		loginRequestBody := `{"email": "johndoe@example.com", "senha": "12345"}`
+		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+	
+		rr := httptest.NewRecorder()
+		
+		controllers.Login(rr, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+
+		expectedResponseBody := "{\"erro\":\"crypto/bcrypt: hashedPassword is not the hash of the given password\"}\n"
+
+		assert.Equal(t, expectedResponseBody, rr.Body.String())
+	})
 }
 
 func TestLoginController(t *testing.T) {
-	suite.Run(t, new(UserRepositorySuite))
+	suite.Run(t, new(TestRepositorySuite))
 }

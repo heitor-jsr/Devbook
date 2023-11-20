@@ -43,8 +43,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(userFromDB)
-
 	// o primeiro parametro é a senha do banco com o hash, e a segunda é a senha que o usuario passou ao tentar fazer o login.
 	if erro = security.VerifyPassword(userFromDB.Senha, user.Senha); erro != nil {
 		fmt.Println("Error verifying password:", erro)
