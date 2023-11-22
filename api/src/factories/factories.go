@@ -1,12 +1,13 @@
-package controllers
+package factories
 
 import (
-    "database/sql"
-    "net/http"
+	"api/src/controllers"
+	"database/sql"
+	"net/http"
 )
 
 func CreateUserFactory(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
     return func(w http.ResponseWriter, r *http.Request) {
-        CreateUser(w, r, db)
+        controllers.CreateUser(w, r, db)
     }
 }

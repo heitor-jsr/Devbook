@@ -3,6 +3,7 @@ package routes
 import (
 	"api/src/controllers"
 	"api/src/database"
+	"api/src/factories"
 	"database/sql"
 	"log"
 )
@@ -23,7 +24,7 @@ var usersRoutes = []Route{
 	{
 		URI: "/users",
 		Method: "POST",
-		Func: controllers.CreateUserFactory(db),
+		Func: factories.CreateUserFactory(db),
 		RequireAuth: false,
 	},
 	{
