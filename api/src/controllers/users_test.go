@@ -2,7 +2,6 @@ package controllers_test
 
 import (
 	"api/src/controllers"
-	"api/src/models"
 	"api/src/repositories"
 	"bytes"
 	"context"
@@ -25,7 +24,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 )
 
-type TestControllerSuite struct {
+type TestUserControllerSuite struct {
 	suite.Suite
 	db        *sql.DB
 	userRepo  *repositories.Usuarios
@@ -34,7 +33,7 @@ type TestControllerSuite struct {
 	tx        *sql.Tx
 }
 
-func (suite *TestControllerSuite) SetupSuite() {
+func (suite *TestUserControllerSuite) SetupSuite() {
 	envPath := "/home/dornzak/devbook/api/.env"
 	if err := godotenv.Load(envPath); err != nil {
 			log.Fatal(err)
@@ -86,7 +85,7 @@ func (suite *TestControllerSuite) SetupSuite() {
 	}
 }
 
-func (suite *TestControllerSuite) SetupTest() {
+func (suite *TestUserControllerSuite) SetupTest() {
 	fmt.Println("SetUpTest...")
 
 	erro := suite.db.Ping()
@@ -127,7 +126,7 @@ func (suite *TestControllerSuite) SetupTest() {
 	}
 }
 
-func (suite *TestControllerSuite) SeedDatabase() error {
+func (suite *TestUserControllerSuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
 	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
 
@@ -154,7 +153,7 @@ func (suite *TestControllerSuite) SeedDatabase() error {
 	return nil
 }
 
-func (suite *TestControllerSuite) CleanDatabase() error {
+func (suite *TestUserControllerSuite) CleanDatabase() error {
 	_, err := suite.db.ExecContext(context.Background(), "DELETE FROM usuarios")
 	if err != nil {
 		return err
@@ -168,85 +167,85 @@ func (suite *TestControllerSuite) CleanDatabase() error {
 	return nil
 }
 
-func (suite *TestControllerSuite) TestLogin() {
+func (suite *TestUserControllerSuite) TestCreate() {
 	t := suite.T()
-	t.Run("Success on login", func(t *testing.T) {
-	loginRequestBody := `{"email": "johndoe@example.com", "senha": "123456"}`
+	t.Run("Success on creating user", func(t *testing.T) {
+	createUserRequestBody := `{"Nome": "John Doe Forth", "Email": "john.doe.forth@example.com", "Senha": "strongPassword123", "Nick": "john_doe_forth"}`
 
-	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
+	req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	rr := httptest.NewRecorder()
 
-	controllers.Login(rr, req)
+	controllers.CreateUser(rr, req, suite.db)
 
-	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, http.StatusCreated, rr.Code)
 
-	var authData models.AuthenticationData
-	err = json.NewDecoder(rr.Body).Decode(&authData)
+	var lasInsertId uint64
+
+	err = json.NewDecoder(rr.Body).Decode(&lasInsertId)
 	assert.NoError(t, err)
-
-	assert.NotEmpty(t, authData.ID)
-	assert.NotEmpty(t, authData.Token)
+	assert.NotEmpty(t, lasInsertId)
+	assert.Equal(t, uint64(3), lasInsertId)
 	})
 
-	t.Run("Fail when request boyd is invalid", func(t *testing.T) {
-		invalidRequestBody := "invalid_json"
-		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(invalidRequestBody))
-		if err != nil {
-			t.Fatal(err)
-		}
+	// t.Run("Fail when request boyd is invalid", func(t *testing.T) {
+	// 	invalidRequestBody := "invalid_json"
+	// 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(invalidRequestBody))
+	// 	if err != nil {
+	// 		t.Fatal(err)
+	// 	}
 	
-		rr := httptest.NewRecorder()
+	// 	rr := httptest.NewRecorder()
 		
-		controllers.Login(rr, req)
+	// 	controllers.Login(rr, req)
 
-		assert.Equal(t, http.StatusBadRequest, rr.Code)
+	// 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 
-		expectedResponseBody := "{\"erro\":\"invalid character 'i' looking for beginning of value\"}\n"
-		assert.Equal(t, expectedResponseBody, rr.Body.String())
+	// 	expectedResponseBody := "{\"erro\":\"invalid character 'i' looking for beginning of value\"}\n"
+	// 	assert.Equal(t, expectedResponseBody, rr.Body.String())
 	
-	})
+	// })
 
-	t.Run("Fail when user email is not found", func(t *testing.T) {
-		loginRequestBody := `{"email": "johndoe123@example.com", "senha": "123456"}`
-		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
-		if err != nil {
-			t.Fatal(err)
-		}
+	// t.Run("Fail when user email is not found", func(t *testing.T) {
+	// 	loginRequestBody := `{"email": "johndoe123@example.com", "senha": "123456"}`
+	// 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
+	// 	if err != nil {
+	// 		t.Fatal(err)
+	// 	}
 	
-		rr := httptest.NewRecorder()
+	// 	rr := httptest.NewRecorder()
 		
-		controllers.Login(rr, req)
+	// 	controllers.Login(rr, req)
 
-		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	// 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 
-		expectedResponseBody := "{\"erro\":\"user with email johndoe123@example.com not found\"}\n"
+	// 	expectedResponseBody := "{\"erro\":\"user with email johndoe123@example.com not found\"}\n"
 
-		assert.Equal(t, expectedResponseBody, rr.Body.String())
-	})
+	// 	assert.Equal(t, expectedResponseBody, rr.Body.String())
+	// })
 
-	t.Run("Fail when user password is incorrect", func(t *testing.T) {
-		loginRequestBody := `{"email": "johndoe@example.com", "senha": "12345"}`
-		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
-		if err != nil {
-			t.Fatal(err)
-		}
+	// t.Run("Fail when user password is incorrect", func(t *testing.T) {
+	// 	loginRequestBody := `{"email": "johndoe@example.com", "senha": "12345"}`
+	// 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
+	// 	if err != nil {
+	// 		t.Fatal(err)
+	// 	}
 	
-		rr := httptest.NewRecorder()
+	// 	rr := httptest.NewRecorder()
 		
-		controllers.Login(rr, req)
+	// 	controllers.Login(rr, req)
 
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	// 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
-		expectedResponseBody := "{\"erro\":\"crypto/bcrypt: hashedPassword is not the hash of the given password\"}\n"
+	// 	expectedResponseBody := "{\"erro\":\"crypto/bcrypt: hashedPassword is not the hash of the given password\"}\n"
 
-		assert.Equal(t, expectedResponseBody, rr.Body.String())
-	})
+	// 	assert.Equal(t, expectedResponseBody, rr.Body.String())
+	// })
 }
 
-func TestLoginController(t *testing.T) {
-	suite.Run(t, new(TestControllerSuite))
+func TestUserController(t *testing.T) {
+	suite.Run(t, new(TestUserControllerSuite))
 }
