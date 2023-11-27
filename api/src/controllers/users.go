@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"api/src/auth"
-	"api/src/database"
 	"api/src/models"
 	"api/src/repositories"
 	"api/src/responses"
@@ -54,18 +53,12 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // busca todos os usuários de acordo com um filtro específico.
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) GetUsers(w http.ResponseWriter, r *http.Request) {
 	// como sabemos, para capturar o parametro de busca de uma rota, precisamos primeiro capturar ele de forma dinâmica. parra isso, usamos o query string, que em go é feito da maneira abaixo.
 	nameOrNick := strings.ToLower(r.URL.Query().Get("users"))
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
+	repository := repositories.NewUsersRepository(uc.db)
 
-	repository := repositories.NewUsersRepository(db)
 	users, erro := repository.GetAll(nameOrNick)
 
 	if erro != nil {
@@ -76,22 +69,15 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusOK, users)
 }
 
-func GetUSerById(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) GetUSerById(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, erro := strconv.ParseUint(params["userId"], 10, 64)
 	if erro != nil {
 		responses.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
+	repository := repositories.NewUsersRepository(uc.db)
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
-
-	repository := repositories.NewUsersRepository(db)
 	user, erro := repository.GetById(id)
 
 	if erro != nil {
@@ -102,7 +88,7 @@ func GetUSerById(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusOK, user)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, erro := strconv.ParseUint(params["userId"], 10, 64)
 	if erro != nil {
@@ -134,14 +120,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
+	repository := repositories.NewUsersRepository(uc.db)
 
-	repository := repositories.NewUsersRepository(db)
 	if erro = repository.Update(id, user); erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -151,7 +131,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusNoContent, nil)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, erro := strconv.ParseUint(params["userId"], 10, 64)
 	if erro != nil {
@@ -170,14 +150,8 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
+	repository := repositories.NewUsersRepository(uc.db)
 
-	repository := repositories.NewUsersRepository(db)
 	if erro = repository.Delete(id); erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -186,7 +160,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusNoContent, nil)
 }
 
-func FollowUser(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) FollowUser(w http.ResponseWriter, r *http.Request) {
 	// nessa rota nós devemos ter o seguinte cuidado: precisamos tanto do Id do seguidor, quanto do seguido. para isso, a lógica é simples: vamos pegar o userId do seguidor do token, e o userId do seguido do parametro da rota.
 	followerId, erro := auth.ExtractUserId(r)
 	if erro != nil {
@@ -206,14 +180,8 @@ func FollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
+	repository := repositories.NewUsersRepository(uc.db)
 
-	repository := repositories.NewUsersRepository(db)
 	if erro = repository.Follow(followerId, followedId); erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -222,7 +190,7 @@ func FollowUser(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusNoContent, nil)
 }
 
-func UnfollowUser(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	// aqui precisamos dos dois ids, como na rota anterior. para isso, aplicamos a mesma lógica. relemebre que o id do token é o usuario que realiza para realizar a operação. é, portanto, o seguidor. o id do seguido é o que o usuario passa na rota.
 	followerId, erro := auth.ExtractUserId(r)
 	if erro != nil {
@@ -242,14 +210,8 @@ func UnfollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
+	repository := repositories.NewUsersRepository(uc.db)
 
-	repository := repositories.NewUsersRepository(db)
 	if erro = repository.Unfollow(followerId, followedId); erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -258,7 +220,7 @@ func UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusNoContent, nil)
 }
 
-func GetFollowers(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) GetFollowers(w http.ResponseWriter, r *http.Request) {
 	// não vamos pegar o id do token pq nós queremos permitir que um usuario busque os seguidores de outro usuario. por isso, vamos utilizar o id que vem na rota.
 	params := mux.Vars(r)
 	id, erro := strconv.ParseUint(params["userId"], 10, 64)
@@ -267,14 +229,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
-
-	repository := repositories.NewUsersRepository(db)
+	repository := repositories.NewUsersRepository(uc.db)
 
 	followers, erro := repository.GetFollowers(id)
 	if erro != nil {
@@ -285,7 +240,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusOK, followers)
 }
 
-func GetFollowings(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) GetFollowings(w http.ResponseWriter, r *http.Request) {
 	// não vamos pegar o id do token pq você queremos permitir que um usuario busque os seguidores de outro usuario. por isso, vamos utilizar o id que vem na rota.
 	params := mux.Vars(r)
 	id, erro := strconv.ParseUint(params["userId"], 10, 64)
@@ -294,15 +249,8 @@ func GetFollowings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
+	repository := repositories.NewUsersRepository(uc.db)
 
-	defer db.Close()
-
-	repository := repositories.NewUsersRepository(db)
 	following, erro := repository.GetFollowing(id)
 	if erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
@@ -312,7 +260,7 @@ func GetFollowings(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusOK, following)
 }
 
-func ChangePassword(w http.ResponseWriter, r *http.Request) {
+func (uc UserController) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	userIdFromToken, erro := auth.ExtractUserId(r)
 	if erro != nil {
 		responses.Erro(w, http.StatusUnauthorized, erro)
@@ -337,15 +285,10 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, erro := database.Connect()
-	if erro != nil {
-		responses.Erro(w, http.StatusInternalServerError, erro)
-		return
-	}
-	defer db.Close()
+	repository := repositories.NewUsersRepository(uc.db)
+
 
 	// antes de alterar a senha, é indispensável que seja verificada se a senha atual que está sendo passada bate com a senha salva no db.
-	repository := repositories.NewUsersRepository(db)
 	passwordFromDb, erro := repository.GetPasswordFromDb(userIdFromToken)
 	if erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
