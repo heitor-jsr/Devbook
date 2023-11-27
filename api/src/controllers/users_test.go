@@ -194,7 +194,7 @@ func (suite *TestUserControllerSuite) TestCreate() {
 		assert.Equal(t, uint64(3), lasInsertId)
 	})
 
-	t.Run("Fail when request boyd is invalid", func(t *testing.T) {
+	t.Run("Fail when name is missing", func(t *testing.T) {
 		createUserRequestBody := `{"Email": "john.doe.third@example.com", "Senha": "strongPassword123", "Nick": "third"}`
 
 		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
@@ -224,9 +224,115 @@ func (suite *TestUserControllerSuite) TestCreate() {
 
 		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
 		assert.NotNil(t, rr.Body.String())
-		fmt.Println(expectedResponseBody)
 
-		// assert.Equal(t, uint64(0), responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
+	})
+
+	t.Run("Fail when email is missing", func(t *testing.T) {
+		createUserRequestBody := `{"Nome": "John Doe Fifth", "Senha": "strongPassword123", "Nick": "john_doe_forth"}`
+
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+
+		var uc = controllers.NewUserController(suite.db)
+
+		uc.CreateUser(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "o campo email é obrigatorio",
+		}
+
+		expectedResponseMessage := "o campo email é obrigatorio"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+		assert.NotNil(t, rr.Body.String())
+
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
+	})
+
+	t.Run("Fail when nick is missing", func(t *testing.T) {
+		createUserRequestBody := `{"Nome": "John Doe Fifth", "Email": "john.doe.fifth@example.com", "Senha": "strongPassword123"}`
+
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+
+		var uc = controllers.NewUserController(suite.db)
+
+		uc.CreateUser(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "o campo nick é obrigatorio",
+		}
+
+		expectedResponseMessage := "o campo nick é obrigatorio"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+		assert.NotNil(t, rr.Body.String())
+
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
+	})
+
+	t.Run("Fail when nick is missing", func(t *testing.T) {
+		createUserRequestBody := `{"Nome": "John Doe Fifth", "Email": "john.doe.fifth@example.com", "Nick": "john_doe_fifth"}`
+
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+
+		var uc = controllers.NewUserController(suite.db)
+
+		uc.CreateUser(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "o campo senha é obrigatorio",
+		}
+
+		expectedResponseMessage := "o campo senha é obrigatorio"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+		assert.NotNil(t, rr.Body.String())
+
 		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
 		assert.Equal(t, expectedResponseBody, responseReturned)
 
