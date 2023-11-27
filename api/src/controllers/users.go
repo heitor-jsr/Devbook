@@ -17,8 +17,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type UserController struct {
+	db *sql.DB
+}
+
+func NewUserController(db *sql.DB) *UserController {
+	return &UserController{db}
+}
+
 // o controller é o responsável por lidar com as requisições http e criar as respostas para os usuários.
-func CreateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if erro := json.NewDecoder(r.Body).Decode(&user); erro != nil {
 		responses.Erro(w, http.StatusBadRequest, erro)
@@ -34,14 +42,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	// não é responsabilidade do controller inserir dados no banco, ou manipular ele. como já foi dito, essa responsabilidade é atribuída ao repository. com ossio, o controller fica responsavel por processar a request, e solicitar a função adeequada do repository para manipular o db.
 
 	// o fluxo é o seguinte: vc abre a conexão com o db, repassa essa conexao para o repositorio, e o metodo do repositorio responsavel por criar um novo usuario é chamado aqui, enviando os dados da request para que o repositorio venha a interagir com o db.
-	repository := repositories.NewUsersRepository(db)
+	repository := repositories.NewUsersRepository(uc.db)
 
 	id, erro := repository.Create(user)
 	if erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
 	}
-	
+
 	responses.JSON(w, http.StatusCreated, id)
 }
 
@@ -139,7 +147,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// a função JSON criada vai receber, dentre outras coisas, os dados a serem enviados como resposta. porem, quando usamos um status code de noContent, não podemos passar nem o nil para ele. neses casos, precisamos fazer uma leve alteração no código do JSON, conforme é possivel ver nele, colocando o Encode() dentro de um bloco if data == nil {}. 
+	// a função JSON criada vai receber, dentre outras coisas, os dados a serem enviados como resposta. porem, quando usamos um status code de noContent, não podemos passar nem o nil para ele. neses casos, precisamos fazer uma leve alteração no código do JSON, conforme é possivel ver nele, colocando o Encode() dentro de um bloco if data == nil {}.
 	responses.JSON(w, http.StatusNoContent, nil)
 }
 

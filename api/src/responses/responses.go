@@ -1,9 +1,9 @@
 package responses
 
 import (
-	"net/http"
 	"encoding/json"
 	"log"
+	"net/http"
 )
 
 // para retornar uma resposta em JSON, usamos a função abaixo. o parametro de dados precisa ser uma interface generica para ser reaproveitada por outras funções.

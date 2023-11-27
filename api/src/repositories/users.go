@@ -44,7 +44,7 @@ func (u Usuarios) GetAll(nameOrNick string) ([]models.User, error) {
 	nameOrNick = fmt.Sprintf("%%%s%%", nameOrNick)
 
 	if nameOrNick == "%%" {
-    nameOrNick = ""
+		nameOrNick = ""
 	}
 
 	var users []models.User

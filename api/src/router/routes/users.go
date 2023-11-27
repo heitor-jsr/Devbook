@@ -3,7 +3,6 @@ package routes
 import (
 	"api/src/controllers"
 	"api/src/database"
-	"api/src/factories"
 	"database/sql"
 	"log"
 )
@@ -18,13 +17,15 @@ func connectDB() *sql.DB {
     return db
 }
 
+var uc = controllers.NewUserController(db)
+
 // representa todas as rotas de usuarios que teremos dentro da api.
 // as funções que vão lidar com as rotas vão ser armazenadas no package controllers.
 var usersRoutes = []Route{
 	{
 		URI: "/users",
 		Method: "POST",
-		Func: factories.CreateUserFactory(db),
+		Func: uc.CreateUser,
 		RequireAuth: false,
 	},
 	{
