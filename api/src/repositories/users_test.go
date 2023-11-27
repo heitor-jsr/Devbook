@@ -350,7 +350,6 @@ func (suite *UserRepositorySuite) TestDelete() {
 		suite.db.Close()
 		err := suite.userRepo.Delete(3)
 
-
 		assert.NotNil(t, err)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "sql: database is closed")

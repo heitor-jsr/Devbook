@@ -26,17 +26,18 @@ import (
 
 type TestUserControllerSuite struct {
 	suite.Suite
-	db        *sql.DB
-	userRepo  *repositories.Usuarios
-	container testcontainers.Container
-	dsn       string
-	tx        *sql.Tx
+	db             *sql.DB
+	userRepo       *repositories.Usuarios
+	container      testcontainers.Container
+	userController *controllers.UserController
+	dsn            string
+	tx             *sql.Tx
 }
 
 func (suite *TestUserControllerSuite) SetupSuite() {
 	envPath := "/home/dornzak/devbook/api/.env"
 	if err := godotenv.Load(envPath); err != nil {
-			log.Fatal(err)
+		log.Fatal(err)
 	}
 
 	mysqlUser := os.Getenv("DB_USER")
@@ -170,44 +171,66 @@ func (suite *TestUserControllerSuite) CleanDatabase() error {
 func (suite *TestUserControllerSuite) TestCreate() {
 	t := suite.T()
 	t.Run("Success on creating user", func(t *testing.T) {
-	createUserRequestBody := `{"Nome": "John Doe Forth", "Email": "john.doe.forth@example.com", "Senha": "strongPassword123", "Nick": "john_doe_forth"}`
+		createUserRequestBody := `{"Nome": "John Doe Forth", "Email": "john.doe.forth@example.com", "Senha": "strongPassword123", "Nick": "john_doe_forth"}`
 
-	req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
-	if err != nil {
-		t.Fatal(err)
-	}
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	rr := httptest.NewRecorder()
+		rr := httptest.NewRecorder()
 
-	controllers.CreateUser(rr, req, suite.db)
+		var uc = controllers.NewUserController(suite.db)
 
-	assert.Equal(t, http.StatusCreated, rr.Code)
+		uc.CreateUser(rr, req)
 
-	var lasInsertId uint64
+		assert.Equal(t, http.StatusCreated, rr.Code)
 
-	err = json.NewDecoder(rr.Body).Decode(&lasInsertId)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, lasInsertId)
-	assert.Equal(t, uint64(3), lasInsertId)
+		var lasInsertId uint64
+
+		err = json.NewDecoder(rr.Body).Decode(&lasInsertId)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, lasInsertId)
+		assert.Equal(t, uint64(3), lasInsertId)
 	})
 
-	// t.Run("Fail when request boyd is invalid", func(t *testing.T) {
-	// 	invalidRequestBody := "invalid_json"
-	// 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(invalidRequestBody))
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	
-	// 	rr := httptest.NewRecorder()
-		
-	// 	controllers.Login(rr, req)
+	t.Run("Fail when request boyd is invalid", func(t *testing.T) {
+		createUserRequestBody := `{"Email": "john.doe.third@example.com", "Senha": "strongPassword123", "Nick": "third"}`
 
-	// 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	expectedResponseBody := "{\"erro\":\"invalid character 'i' looking for beginning of value\"}\n"
-	// 	assert.Equal(t, expectedResponseBody, rr.Body.String())
-	
-	// })
+		rr := httptest.NewRecorder()
+
+		var uc = controllers.NewUserController(suite.db)
+
+		uc.CreateUser(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "o campo nome é obrigatorio",
+		}
+
+		expectedResponseMessage := "o campo nome é obrigatorio"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+		assert.NotNil(t, rr.Body.String())
+		fmt.Println(expectedResponseBody)
+
+		// assert.Equal(t, uint64(0), responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
+	})
 
 	// t.Run("Fail when user email is not found", func(t *testing.T) {
 	// 	loginRequestBody := `{"email": "johndoe123@example.com", "senha": "123456"}`
@@ -215,9 +238,9 @@ func (suite *TestUserControllerSuite) TestCreate() {
 	// 	if err != nil {
 	// 		t.Fatal(err)
 	// 	}
-	
+
 	// 	rr := httptest.NewRecorder()
-		
+
 	// 	controllers.Login(rr, req)
 
 	// 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
@@ -233,9 +256,9 @@ func (suite *TestUserControllerSuite) TestCreate() {
 	// 	if err != nil {
 	// 		t.Fatal(err)
 	// 	}
-	
+
 	// 	rr := httptest.NewRecorder()
-		
+
 	// 	controllers.Login(rr, req)
 
 	// 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
