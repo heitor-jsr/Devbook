@@ -338,41 +338,23 @@ func (suite *TestUserControllerSuite) TestCreate() {
 
 	})
 
-	// t.Run("Fail when user email is not found", func(t *testing.T) {
-	// 	loginRequestBody := `{"email": "johndoe123@example.com", "senha": "123456"}`
-	// 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+	t.Run("Fail when database connection is closed", func(t *testing.T) {
+		createUserRequestBody := `{"Nome": "John Doe Forth", "Email": "john.doe.forth@example.com", "Senha": "strongPassword123", "Nick": "john_doe_forth"}`
 
-	// 	rr := httptest.NewRecorder()
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	controllers.Login(rr, req)
+		rr := httptest.NewRecorder()
 
-	// 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 
-	// 	expectedResponseBody := "{\"erro\":\"user with email johndoe123@example.com not found\"}\n"
+		var uc = controllers.NewUserController(suite.db)
+		
+		uc.CreateUser(rr, req)
 
-	// 	assert.Equal(t, expectedResponseBody, rr.Body.String())
-	// })
-
-	// t.Run("Fail when user password is incorrect", func(t *testing.T) {
-	// 	loginRequestBody := `{"email": "johndoe@example.com", "senha": "12345"}`
-	// 	req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(loginRequestBody))
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-
-	// 	rr := httptest.NewRecorder()
-
-	// 	controllers.Login(rr, req)
-
-	// 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-
-	// 	expectedResponseBody := "{\"erro\":\"crypto/bcrypt: hashedPassword is not the hash of the given password\"}\n"
-
-	// 	assert.Equal(t, expectedResponseBody, rr.Body.String())
-	// })
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	})
 }
 
 func TestUserController(t *testing.T) {
