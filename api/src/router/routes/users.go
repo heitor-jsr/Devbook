@@ -7,15 +7,15 @@ import (
 	"log"
 )
 
-var db *sql.DB = connectDB()
-
 func connectDB() *sql.DB {
-    db, erro := database.Connect()
-    if erro != nil {
-        log.Fatal(erro)
-    }
-    return db
+	db, erro := database.Connect()
+	if erro != nil {
+			log.Fatal(erro)
+	}
+	return db
 }
+
+var db *sql.DB = connectDB()
 
 var uc = controllers.NewUserController(db)
 
