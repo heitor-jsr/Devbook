@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -473,6 +474,83 @@ func (suite *TestUserControllerSuite) TestGetUsers() {
 		assert.Contains(t, users, resposeExpected[1])
 		assert.ElementsMatch(t, resposeExpected, users)
 		assert.EqualValues(t, resposeExpected, users)
+	})
+}
+
+func (suite *TestUserControllerSuite) TestGetUserById() {
+	t := suite.T()
+	t.Run("Success on getting user by id", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("GET", "/users/1", nil)
+
+		// Para testar requisições que utilizam o pacote mux e o roteador fornecido por ele, é necessário criar um roteador do mux no seu teste, adicionar a rota que está sendo testada e, em seguida, servir a requisição através desse roteador. Sem isso, o mux.Vars(r) não consegue extrair o parâmetro "userId" da URL, porque a requisição não passa por um roteador do mux.
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.GetUSerById)
+
+		rr := httptest.NewRecorder()
+
+    router.ServeHTTP(rr, req)
+
+		uc.GetUSerById(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var users models.User
+		err = json.NewDecoder(rr.Body).Decode(&users)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var resposeExpected = models.User{
+				Id:    1,
+				Nome:  "John Doe",
+				Email: "johndoe@example.com",
+				Nick:  "johndoe",
+				Senha: "",
+		}
+
+		assert.Equal(t, resposeExpected, users)
+		assert.EqualValues(t, resposeExpected, users)
+	})
+
+	t.Run("Fail when string is not an integer", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("GET", "/users/asdf", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.GetUSerById)
+
+		rr := httptest.NewRecorder()
+
+    router.ServeHTTP(rr, req)
+
+		uc.GetUSerById(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "strconv.ParseUint: parsing \"asdf\": invalid syntax",
+		}
+
+		expectedResponseMessage := "strconv.ParseUint: parsing \"asdf\": invalid syntax"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+		assert.NotNil(t, rr.Body.String())
+
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
 	})
 }
 
