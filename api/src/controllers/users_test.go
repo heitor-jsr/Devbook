@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"api/src/controllers"
+	"api/src/models"
 	"api/src/repositories"
 	"bytes"
 	"context"
@@ -302,7 +303,7 @@ func (suite *TestUserControllerSuite) TestCreate() {
 
 	})
 
-	t.Run("Fail when nick is missing", func(t *testing.T) {
+	t.Run("Fail when password is missing", func(t *testing.T) {
 		createUserRequestBody := `{"Nome": "John Doe Fifth", "Email": "john.doe.fifth@example.com", "Nick": "john_doe_fifth"}`
 
 		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
@@ -337,23 +338,141 @@ func (suite *TestUserControllerSuite) TestCreate() {
 		assert.Equal(t, expectedResponseBody, responseReturned)
 
 	})
+}
 
-	t.Run("Fail when database connection is closed", func(t *testing.T) {
-		createUserRequestBody := `{"Nome": "John Doe Forth", "Email": "john.doe.forth@example.com", "Senha": "strongPassword123", "Nick": "john_doe_forth"}`
+func (suite *TestUserControllerSuite) TestGetUsers() {
+	t := suite.T()
+	t.Run("Success on getting user by name", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
 
-		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(createUserRequestBody))
+		req, err := http.NewRequest("GET", "/users?name=John", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		rr := httptest.NewRecorder()
 
+		uc.GetUsers(rr, req)
 
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var users []models.User
+		err = json.NewDecoder(rr.Body).Decode(&users)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var resposeExpected = []models.User{
+			{
+				Id:    1,
+				Nome:  "John Doe",
+				Email: "johndoe@example.com",
+				Nick:  "johndoe",
+				Senha: "",
+			},
+			{
+				Id:    2,
+				Nome:  "John Doe The Second",
+				Email: "johndoe2@example.com",
+				Nick:  "johndoe2",
+				Senha: "",
+			},
+		}
+
+		assert.Equal(t, 2, len(users))
+		assert.Contains(t, users, resposeExpected[0])
+		assert.Contains(t, users, resposeExpected[1])
+		assert.ElementsMatch(t, resposeExpected, users)
+		assert.EqualValues(t, resposeExpected, users)
+	})
+
+	t.Run("Success on getting user by nick", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
-		
-		uc.CreateUser(rr, req)
 
-		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		req, err := http.NewRequest("GET", "/users?name=johndoe2", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+
+		uc.GetUsers(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var users []models.User
+		err = json.NewDecoder(rr.Body).Decode(&users)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var resposeExpected = []models.User{
+			{
+				Id:    1,
+				Nome:  "John Doe",
+				Email: "johndoe@example.com",
+				Nick:  "johndoe",
+				Senha: "",
+			},
+			{
+				Id:    2,
+				Nome:  "John Doe The Second",
+				Email: "johndoe2@example.com",
+				Nick:  "johndoe2",
+				Senha: "",
+			},
+		}
+
+		assert.Equal(t, 2, len(users))
+		assert.Contains(t, users, resposeExpected[0])
+		assert.Contains(t, users, resposeExpected[1])
+		assert.ElementsMatch(t, resposeExpected, users)
+		assert.EqualValues(t, resposeExpected, users)
+	})
+
+
+	t.Run("Success on getting user when no parameters is given", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("GET", "/users", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+
+		uc.GetUsers(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var users []models.User
+		err = json.NewDecoder(rr.Body).Decode(&users)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var resposeExpected = []models.User{
+			{
+				Id:    1,
+				Nome:  "John Doe",
+				Email: "johndoe@example.com",
+				Nick:  "johndoe",
+				Senha: "",
+			},
+			{
+				Id:    2,
+				Nome:  "John Doe The Second",
+				Email: "johndoe2@example.com",
+				Nick:  "johndoe2",
+				Senha: "",
+			},
+		}
+
+		assert.Equal(t, 2, len(users))
+		assert.Contains(t, users, resposeExpected[0])
+		assert.Contains(t, users, resposeExpected[1])
+		assert.ElementsMatch(t, resposeExpected, users)
+		assert.EqualValues(t, resposeExpected, users)
 	})
 }
 
