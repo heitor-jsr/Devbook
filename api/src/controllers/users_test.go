@@ -1,6 +1,7 @@
 package controllers_test
 
 import (
+	"api/src/auth"
 	"api/src/controllers"
 	"api/src/models"
 	"api/src/repositories"
@@ -552,6 +553,72 @@ func (suite *TestUserControllerSuite) TestGetUserById() {
 		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
 		assert.Equal(t, expectedResponseBody, responseReturned)
 	})
+}
+
+func (suite *TestUserControllerSuite) TestUpdateUser() {
+	t := suite.T()
+	t.Run("Success on updating user", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal", "Email": "joaodetal@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Para testar requisições que utilizam o pacote mux e o roteador fornecido por ele, é necessário criar um roteador do mux no seu teste, adicionar a rota que está sendo testada e, em seguida, servir a requisição através desse roteador. Sem isso, o mux.Vars(r) não consegue extrair o parâmetro "userId" da URL, porque a requisição não passa por um roteador do mux.
+		token, _ := auth.GenerateToken(1)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+    router.ServeHTTP(rr, req)
+
+		uc.UpdateUser(rr, req)
+
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+	})
+
+	// t.Run("Fail when string is not an integer", func(t *testing.T) {
+	// 	var uc = controllers.NewUserController(suite.db)
+
+	// 	req, err := http.NewRequest("GET", "/users/asdf", nil)
+	// 	if err != nil {
+	// 		t.Fatal(err)
+	// 	}
+
+	// 	router := mux.NewRouter()
+  //   router.HandleFunc("/users/{userId}", uc.GetUSerById)
+
+	// 	rr := httptest.NewRecorder()
+
+  //   router.ServeHTTP(rr, req)
+
+	// 	uc.GetUSerById(rr, req)
+
+	// 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	// 	var responseReturned struct {
+	// 		Erro string
+	// 	}
+
+	// 	expectedResponseBody := struct {
+	// 		Erro string
+	// 	}{
+	// 		Erro: "strconv.ParseUint: parsing \"asdf\": invalid syntax",
+	// 	}
+
+	// 	expectedResponseMessage := "strconv.ParseUint: parsing \"asdf\": invalid syntax"
+
+	// 	err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+	// 	assert.NotNil(t, rr.Body.String())
+
+	// 	assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+	// 	assert.Equal(t, expectedResponseBody, responseReturned)
+	// })
 }
 
 func TestUserController(t *testing.T) {
