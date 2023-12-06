@@ -1093,6 +1093,46 @@ func (suite *TestUserControllerSuite) TestGetFollowers() {
 	})
 }
 
+
+func (suite *TestUserControllerSuite) TestGetFollowings() {
+	t := suite.T()
+	t.Run("Success on getting the following users", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("GET", "/users/2/followings", nil)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}/followings", uc.GetFollowings).Methods("GET")
+
+		rr := httptest.NewRecorder()
+
+    router.ServeHTTP(rr, req)
+
+		uc.GetFollowings(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var users []models.User
+		err = json.NewDecoder(rr.Body).Decode(&users)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var resposeExpected = []models.User{
+			{
+				Id:    1,
+				Nome:  "John Doe",
+				Email: "johndoe@example.com",
+				Nick:  "johndoe",
+				Senha: "",
+			},
+		}
+
+		assert.Equal(t, resposeExpected, users)
+		assert.EqualValues(t, resposeExpected, users)
+	})
+}
+
 func TestUserController(t *testing.T) {
 	suite.Run(t, new(TestUserControllerSuite))
 }
