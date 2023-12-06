@@ -704,6 +704,114 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 	})
 }
 
+func (suite *TestUserControllerSuite) TestDeleteUser() {
+	t := suite.T()
+	t.Run("Success on deleting user", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+    req, err := http.NewRequest("DELETE", "/users/1", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		token, _ := auth.GenerateToken(1)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.DeleteUser)
+
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+    router.ServeHTTP(rr, req)
+
+		uc.DeleteUser(rr, req)
+
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+	})
+
+	t.Run("Fail when the id from token is different from the id from URL", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+    req, err := http.NewRequest("DELETE", "/users/2", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tokenInvalid, _ := auth.GenerateToken(1)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.DeleteUser)
+
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tokenInvalid))
+
+    router.ServeHTTP(rr, req)
+
+		uc.DeleteUser(rr, req)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "Não é possível deletar um usuário que não é o seu.",
+		}
+
+		expectedResponseMessage := "Não é possível deletar um usuário que não é o seu."
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+
+		assert.Equal(t, http.StatusForbidden, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
+	})
+
+	t.Run("Fail when extracting id from token", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+    req, err := http.NewRequest("DELETE", "/users/2", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.DeleteUser)
+
+		rr := httptest.NewRecorder()
+		
+    router.ServeHTTP(rr, req)
+
+		uc.DeleteUser(rr, req)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "token contains an invalid number of segments",
+		}
+
+		expectedResponseMessage := "token contains an invalid number of segments"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+	})
+
+}
 func TestUserController(t *testing.T) {
 	suite.Run(t, new(TestUserControllerSuite))
 }
