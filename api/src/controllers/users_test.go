@@ -1093,7 +1093,6 @@ func (suite *TestUserControllerSuite) TestGetFollowers() {
 	})
 }
 
-
 func (suite *TestUserControllerSuite) TestGetFollowings() {
 	t := suite.T()
 	t.Run("Success on getting the following users", func(t *testing.T) {
@@ -1130,6 +1129,111 @@ func (suite *TestUserControllerSuite) TestGetFollowings() {
 
 		assert.Equal(t, resposeExpected, users)
 		assert.EqualValues(t, resposeExpected, users)
+	})
+}
+
+func (suite *TestUserControllerSuite) TestChangePassword() {
+	t := suite.T()
+	t.Run("Success on changing user password", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, _ := http.NewRequest("POST", "/users/1/change-password", strings.NewReader(`{"current":"123456","new":"strongerpassword"}`))
+
+		token, _ := auth.GenerateToken(1)
+
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
+
+		rr := httptest.NewRecorder()
+
+    router.ServeHTTP(rr, req)
+
+		uc.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+	})
+
+	t.Run("Fail when extracting id from token", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("POST", "/users/1/change-password", strings.NewReader(`{"current":"123456","new":"strongerpassword"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
+
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
+
+    router.ServeHTTP(rr, req)
+
+		uc.ChangePassword(rr, req)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "token contains an invalid number of segments",
+		}
+
+		expectedResponseMessage := "token contains an invalid number of segments"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+	})
+
+	t.Run("Fail when the id from token is different from the id from URL", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("POST", "/users/2/change-password", strings.NewReader(`{"current":"123456","new":"strongerpassword"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		// quem eu vou seguir eu extraio o id da rota, e eu, que estou seguindo alguem, extraio do meu token.
+		token, _ := auth.GenerateToken(1)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
+
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+    router.ServeHTTP(rr, req)
+
+		uc.ChangePassword(rr, req)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "Não é possível alterar a senha de um usuário que não é o seu.",
+		}
+
+		expectedResponseMessage := "Não é possível alterar a senha de um usuário que não é o seu."
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+
+		assert.Equal(t, http.StatusForbidden, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
 	})
 }
 
