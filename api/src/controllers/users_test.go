@@ -448,7 +448,6 @@ func (suite *TestUserControllerSuite) TestGetUsers() {
 		assert.EqualValues(t, resposeExpected, users)
 	})
 
-
 	t.Run("Success on getting user when no parameters is given", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
@@ -483,7 +482,7 @@ func (suite *TestUserControllerSuite) TestGetUsers() {
 				Email: "johndoe2@example.com",
 				Nick:  "johndoe2",
 				Senha: "",
-			},			
+			},
 			{
 				Id:    3,
 				Nome:  "John Doe The Third",
@@ -512,11 +511,11 @@ func (suite *TestUserControllerSuite) TestGetUserById() {
 		// Para testar requisições que utilizam o pacote mux e o roteador fornecido por ele, é necessário criar um roteador do mux no seu teste, adicionar a rota que está sendo testada e, em seguida, servir a requisição através desse roteador. Sem isso, o mux.Vars(r) não consegue extrair o parâmetro "userId" da URL, porque a requisição não passa por um roteador do mux.
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.GetUSerById)
+		router.HandleFunc("/users/{userId}", uc.GetUSerById)
 
 		rr := httptest.NewRecorder()
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.GetUSerById(rr, req)
 
@@ -529,11 +528,11 @@ func (suite *TestUserControllerSuite) TestGetUserById() {
 		}
 
 		var resposeExpected = models.User{
-				Id:    1,
-				Nome:  "John Doe",
-				Email: "johndoe@example.com",
-				Nick:  "johndoe",
-				Senha: "",
+			Id:    1,
+			Nome:  "John Doe",
+			Email: "johndoe@example.com",
+			Nick:  "johndoe",
+			Senha: "",
 		}
 
 		assert.Equal(t, resposeExpected, users)
@@ -549,11 +548,11 @@ func (suite *TestUserControllerSuite) TestGetUserById() {
 		}
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.GetUSerById)
+		router.HandleFunc("/users/{userId}", uc.GetUSerById)
 
 		rr := httptest.NewRecorder()
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.GetUSerById(rr, req)
 
@@ -584,7 +583,7 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 	t.Run("Success on updating user", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal", "Email": "joaodetal@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal"}`))
+		req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal", "Email": "joaodetal@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal"}`))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -593,13 +592,13 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+		router.HandleFunc("/users/{userId}", uc.UpdateUser)
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.UpdateUser(rr, req)
 
@@ -609,7 +608,7 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 	t.Run("Fail when the id from token is different from the id from URL", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal2"}`))
+		req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal2"}`))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -617,13 +616,13 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 		tokenInvalid, _ := auth.GenerateToken(2)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+		router.HandleFunc("/users/{userId}", uc.UpdateUser)
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tokenInvalid))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.UpdateUser(rr, req)
 
@@ -651,19 +650,19 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 	t.Run("Fail when extracting id from token", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal2"}`))
-    if err != nil {
-        t.Fatal(err)
-    }
+		req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal2"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+		router.HandleFunc("/users/{userId}", uc.UpdateUser)
 
 		rr := httptest.NewRecorder()
-		
-    router.ServeHTTP(rr, req)
+
+		router.ServeHTTP(rr, req)
 
 		uc.UpdateUser(rr, req)
 
@@ -689,21 +688,21 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 	t.Run("Fail when body is invalid", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword"}`))
-    if err != nil {
-        t.Fatal(err)
-    }
+		req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+		router.HandleFunc("/users/{userId}", uc.UpdateUser)
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.UpdateUser(rr, req)
 
@@ -733,7 +732,7 @@ func (suite *TestUserControllerSuite) TestDeleteUser() {
 	t.Run("Success on deleting user", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("DELETE", "/users/1", nil)
+		req, err := http.NewRequest("DELETE", "/users/1", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -741,13 +740,13 @@ func (suite *TestUserControllerSuite) TestDeleteUser() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.DeleteUser)
+		router.HandleFunc("/users/{userId}", uc.DeleteUser)
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.DeleteUser(rr, req)
 
@@ -757,7 +756,7 @@ func (suite *TestUserControllerSuite) TestDeleteUser() {
 	t.Run("Fail when the id from token is different from the id from URL", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("DELETE", "/users/2", nil)
+		req, err := http.NewRequest("DELETE", "/users/2", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -765,13 +764,13 @@ func (suite *TestUserControllerSuite) TestDeleteUser() {
 		tokenInvalid, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.DeleteUser)
+		router.HandleFunc("/users/{userId}", uc.DeleteUser)
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tokenInvalid))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.DeleteUser(rr, req)
 
@@ -799,19 +798,19 @@ func (suite *TestUserControllerSuite) TestDeleteUser() {
 	t.Run("Fail when extracting id from token", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("DELETE", "/users/2", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+		req, err := http.NewRequest("DELETE", "/users/2", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}", uc.DeleteUser)
+		router.HandleFunc("/users/{userId}", uc.DeleteUser)
 
 		rr := httptest.NewRecorder()
-		
-    router.ServeHTTP(rr, req)
+
+		router.ServeHTTP(rr, req)
 
 		uc.DeleteUser(rr, req)
 
@@ -841,7 +840,7 @@ func (suite *TestUserControllerSuite) TestFollowUser() {
 	t.Run("Success on following user", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("POST", "/users/3/follow", nil)
+		req, err := http.NewRequest("POST", "/users/3/follow", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -849,13 +848,13 @@ func (suite *TestUserControllerSuite) TestFollowUser() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/follow", uc.FollowUser).Methods("POST")
+		router.HandleFunc("/users/{userId}/follow", uc.FollowUser).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.FollowUser(rr, req)
 
@@ -865,7 +864,7 @@ func (suite *TestUserControllerSuite) TestFollowUser() {
 	t.Run("Fail when the id from token is equal from the id from URL", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("POST", "/users/1/follow", nil)
+		req, err := http.NewRequest("POST", "/users/1/follow", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -873,13 +872,13 @@ func (suite *TestUserControllerSuite) TestFollowUser() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/follow", uc.FollowUser).Methods("POST")
+		router.HandleFunc("/users/{userId}/follow", uc.FollowUser).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.FollowUser(rr, req)
 
@@ -907,19 +906,19 @@ func (suite *TestUserControllerSuite) TestFollowUser() {
 	t.Run("Fail when extracting id from token", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("POST", "/users/1/follow", nil)
+		req, err := http.NewRequest("POST", "/users/1/follow", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/follow", uc.FollowUser).Methods("POST")
+		router.HandleFunc("/users/{userId}/follow", uc.FollowUser).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.FollowUser(rr, req)
 
@@ -950,7 +949,7 @@ func (suite *TestUserControllerSuite) TestUnfollowUser() {
 	t.Run("Success on unfollowing user", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("POST", "/users/2/unfollow", nil)
+		req, err := http.NewRequest("POST", "/users/2/unfollow", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -958,13 +957,13 @@ func (suite *TestUserControllerSuite) TestUnfollowUser() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/unfollow", uc.UnfollowUser).Methods("POST")
+		router.HandleFunc("/users/{userId}/unfollow", uc.UnfollowUser).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.UnfollowUser(rr, req)
 
@@ -974,7 +973,7 @@ func (suite *TestUserControllerSuite) TestUnfollowUser() {
 	t.Run("Fail when the id from token is equal from the id from URL", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("POST", "/users/1/unfollow", nil)
+		req, err := http.NewRequest("POST", "/users/1/unfollow", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -982,13 +981,13 @@ func (suite *TestUserControllerSuite) TestUnfollowUser() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/unfollow", uc.UnfollowUser).Methods("POST")
+		router.HandleFunc("/users/{userId}/unfollow", uc.UnfollowUser).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.UnfollowUser(rr, req)
 
@@ -1016,19 +1015,19 @@ func (suite *TestUserControllerSuite) TestUnfollowUser() {
 	t.Run("Fail when extracting id from token", func(t *testing.T) {
 		var uc = controllers.NewUserController(suite.db)
 
-    req, err := http.NewRequest("POST", "/users/1/unfollow", nil)
+		req, err := http.NewRequest("POST", "/users/1/unfollow", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/unfollow", uc.UnfollowUser).Methods("POST")
+		router.HandleFunc("/users/{userId}/unfollow", uc.UnfollowUser).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.UnfollowUser(rr, req)
 
@@ -1062,11 +1061,11 @@ func (suite *TestUserControllerSuite) TestGetFollowers() {
 		req, err := http.NewRequest("GET", "/users/1/followers", nil)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/followers", uc.GetFollowers).Methods("GET")
+		router.HandleFunc("/users/{userId}/followers", uc.GetFollowers).Methods("GET")
 
 		rr := httptest.NewRecorder()
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.GetFollowers(rr, req)
 
@@ -1101,11 +1100,11 @@ func (suite *TestUserControllerSuite) TestGetFollowings() {
 		req, err := http.NewRequest("GET", "/users/2/followings", nil)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/followings", uc.GetFollowings).Methods("GET")
+		router.HandleFunc("/users/{userId}/followings", uc.GetFollowings).Methods("GET")
 
 		rr := httptest.NewRecorder()
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.GetFollowings(rr, req)
 
@@ -1144,11 +1143,11 @@ func (suite *TestUserControllerSuite) TestChangePassword() {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
+		router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
 
 		rr := httptest.NewRecorder()
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.ChangePassword(rr, req)
 
@@ -1164,13 +1163,13 @@ func (suite *TestUserControllerSuite) TestChangePassword() {
 		}
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
+		router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.ChangePassword(rr, req)
 
@@ -1205,13 +1204,13 @@ func (suite *TestUserControllerSuite) TestChangePassword() {
 		token, _ := auth.GenerateToken(1)
 
 		router := mux.NewRouter()
-    router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
+		router.HandleFunc("/users/{userId}/change-password", uc.ChangePassword).Methods("POST")
 
 		rr := httptest.NewRecorder()
-		
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-    router.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		uc.ChangePassword(rr, req)
 
