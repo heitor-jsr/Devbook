@@ -379,11 +379,19 @@ func (suite *TestUserControllerSuite) TestGetUsers() {
 				Nick:  "johndoe2",
 				Senha: "",
 			},
+			{
+				Id:    3,
+				Nome:  "John Doe The Third",
+				Email: "johndoe3@example.com",
+				Nick:  "johndoe3",
+				Senha: "",
+			},
 		}
 
-		assert.Equal(t, 2, len(users))
+		assert.Equal(t, 3, len(users))
 		assert.Contains(t, users, resposeExpected[0])
 		assert.Contains(t, users, resposeExpected[1])
+		assert.Contains(t, users, resposeExpected[2])
 		assert.ElementsMatch(t, resposeExpected, users)
 		assert.EqualValues(t, resposeExpected, users)
 	})
@@ -423,11 +431,19 @@ func (suite *TestUserControllerSuite) TestGetUsers() {
 				Nick:  "johndoe2",
 				Senha: "",
 			},
+			{
+				Id:    3,
+				Nome:  "John Doe The Third",
+				Email: "johndoe3@example.com",
+				Nick:  "johndoe3",
+				Senha: "",
+			},
 		}
 
-		assert.Equal(t, 2, len(users))
+		assert.Equal(t, 3, len(users))
 		assert.Contains(t, users, resposeExpected[0])
 		assert.Contains(t, users, resposeExpected[1])
+		assert.Contains(t, users, resposeExpected[2])
 		assert.ElementsMatch(t, resposeExpected, users)
 		assert.EqualValues(t, resposeExpected, users)
 	})
@@ -467,12 +483,20 @@ func (suite *TestUserControllerSuite) TestGetUsers() {
 				Email: "johndoe2@example.com",
 				Nick:  "johndoe2",
 				Senha: "",
+			},			
+			{
+				Id:    3,
+				Nome:  "John Doe The Third",
+				Email: "johndoe3@example.com",
+				Nick:  "johndoe3",
+				Senha: "",
 			},
 		}
 
-		assert.Equal(t, 2, len(users))
+		assert.Equal(t, 3, len(users))
 		assert.Contains(t, users, resposeExpected[0])
 		assert.Contains(t, users, resposeExpected[1])
+		assert.Contains(t, users, resposeExpected[2])
 		assert.ElementsMatch(t, resposeExpected, users)
 		assert.EqualValues(t, resposeExpected, users)
 	})
