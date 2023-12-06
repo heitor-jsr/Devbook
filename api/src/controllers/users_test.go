@@ -1053,6 +1053,46 @@ func (suite *TestUserControllerSuite) TestUnfollowUser() {
 	})
 
 }
+
+func (suite *TestUserControllerSuite) TestGetFollowers() {
+	t := suite.T()
+	t.Run("Success on getting followers", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+		req, err := http.NewRequest("GET", "/users/1/followers", nil)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}/followers", uc.GetFollowers).Methods("GET")
+
+		rr := httptest.NewRecorder()
+
+    router.ServeHTTP(rr, req)
+
+		uc.GetFollowers(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var users []models.User
+		err = json.NewDecoder(rr.Body).Decode(&users)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var resposeExpected = []models.User{
+			{
+				Id:    2,
+				Nome:  "John Doe The Second",
+				Email: "johndoe2@example.com",
+				Nick:  "johndoe2",
+				Senha: "",
+			},
+		}
+
+		assert.Equal(t, resposeExpected, users)
+		assert.EqualValues(t, resposeExpected, users)
+	})
+}
+
 func TestUserController(t *testing.T) {
 	suite.Run(t, new(TestUserControllerSuite))
 }
