@@ -582,43 +582,126 @@ func (suite *TestUserControllerSuite) TestUpdateUser() {
 		assert.Equal(t, http.StatusNoContent, rr.Code)
 	})
 
-	// t.Run("Fail when string is not an integer", func(t *testing.T) {
-	// 	var uc = controllers.NewUserController(suite.db)
+	t.Run("Fail when the id from token is different from the id from URL", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
 
-	// 	req, err := http.NewRequest("GET", "/users/asdf", nil)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal2"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	router := mux.NewRouter()
-  //   router.HandleFunc("/users/{userId}", uc.GetUSerById)
+		tokenInvalid, _ := auth.GenerateToken(2)
 
-	// 	rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.UpdateUser)
 
-  //   router.ServeHTTP(rr, req)
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tokenInvalid))
 
-	// 	uc.GetUSerById(rr, req)
+    router.ServeHTTP(rr, req)
 
-	// 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+		uc.UpdateUser(rr, req)
 
-	// 	var responseReturned struct {
-	// 		Erro string
-	// 	}
+		var responseReturned struct {
+			Erro string
+		}
 
-	// 	expectedResponseBody := struct {
-	// 		Erro string
-	// 	}{
-	// 		Erro: "strconv.ParseUint: parsing \"asdf\": invalid syntax",
-	// 	}
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "Não é possível atualizar um usuário que não é o seu.",
+		}
 
-	// 	expectedResponseMessage := "strconv.ParseUint: parsing \"asdf\": invalid syntax"
+		expectedResponseMessage := "Não é possível atualizar um usuário que não é o seu."
 
-	// 	err = json.NewDecoder(rr.Body).Decode(&responseReturned)
-	// 	assert.NotNil(t, rr.Body.String())
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
 
-	// 	assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
-	// 	assert.Equal(t, expectedResponseBody, responseReturned)
-	// })
+		assert.Equal(t, http.StatusForbidden, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+
+	})
+
+	t.Run("Fail when extracting id from token", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword", "Nick": "jao_de_tal2"}`))
+    if err != nil {
+        t.Fatal(err)
+    }
+
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", "token_invalido"))
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+
+		rr := httptest.NewRecorder()
+		
+    router.ServeHTTP(rr, req)
+
+		uc.UpdateUser(rr, req)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "token contains an invalid number of segments",
+		}
+
+		expectedResponseMessage := "token contains an invalid number of segments"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+	})
+	t.Run("Fail when body is invalid", func(t *testing.T) {
+		var uc = controllers.NewUserController(suite.db)
+
+    req, err := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"Nome": "João de tal 2", "Email": "joaodetal2@example.com", "Senha": "strongPassword"}`))
+    if err != nil {
+        t.Fatal(err)
+    }
+
+		token, _ := auth.GenerateToken(1)
+
+		router := mux.NewRouter()
+    router.HandleFunc("/users/{userId}", uc.UpdateUser)
+
+		rr := httptest.NewRecorder()
+		
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+    router.ServeHTTP(rr, req)
+
+		uc.UpdateUser(rr, req)
+
+		var responseReturned struct {
+			Erro string
+		}
+
+		expectedResponseBody := struct {
+			Erro string
+		}{
+			Erro: "o campo nick é obrigatorio",
+		}
+
+		expectedResponseMessage := "o campo nick é obrigatorio"
+
+		err = json.NewDecoder(rr.Body).Decode(&responseReturned)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.NotNil(t, responseReturned)
+		assert.Equal(t, expectedResponseMessage, responseReturned.Erro)
+		assert.Equal(t, expectedResponseBody, responseReturned)
+	})
 }
 
 func TestUserController(t *testing.T) {
