@@ -126,11 +126,11 @@ api/src/controllers/users.go:153.2,155.47 2 1
 api/src/controllers/users.go:155.47,158.3 2 0
 api/src/controllers/users.go:160.2,160.46 1 1
 api/src/controllers/users.go:163.77,166.17 2 1
-api/src/controllers/users.go:166.17,169.3 2 0
+api/src/controllers/users.go:166.17,169.3 2 1
 api/src/controllers/users.go:171.2,173.17 3 1
 api/src/controllers/users.go:173.17,176.3 2 1
 api/src/controllers/users.go:178.2,178.30 1 1
-api/src/controllers/users.go:178.30,181.3 2 0
+api/src/controllers/users.go:178.30,181.3 2 1
 api/src/controllers/users.go:183.2,185.67 2 1
 api/src/controllers/users.go:185.67,188.3 2 0
 api/src/controllers/users.go:190.2,190.46 1 1
