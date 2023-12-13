@@ -298,7 +298,7 @@ func (suite *PublicationsRepositorySuite) TestUpdate() {
 
 		err := suite.publiRepo.Update(2, publication)
 
-		publicationUpdated, err := suite.publiRepo.GetPublicationById(2)
+		publicationUpdated, _ := suite.publiRepo.GetPublicationById(2)
 
 		assert.NotNil(t, publicationUpdated)
 		assert.NoError(t, err)
@@ -388,7 +388,7 @@ func (suite *PublicationsRepositorySuite) TestLikePublication() {
 	t.Run("Success on liking the publication", func(t *testing.T) {
 		err := suite.publiRepo.LikePublication(2)
 
-		publicationLiked, err := suite.publiRepo.GetPublicationById(2)
+		publicationLiked, _ := suite.publiRepo.GetPublicationById(2)
 
 		assert.NotNil(t, publicationLiked)
 		assert.NoError(t, err)
@@ -420,13 +420,13 @@ func (suite *PublicationsRepositorySuite) TestLikePublication() {
 func (suite *PublicationsRepositorySuite) TestDeslikePublication() {
 	t := suite.T()
 	t.Run("Success on desliking the publication", func(t *testing.T) {
-		err := suite.publiRepo.LikePublication(2)
+		suite.publiRepo.LikePublication(2)
 
-		err = suite.publiRepo.LikePublication(2)
+		suite.publiRepo.LikePublication(2)
 
-		err = suite.publiRepo.DeslikePublication(2)
+		err := suite.publiRepo.DeslikePublication(2)
 
-		publicationLiked, err := suite.publiRepo.GetPublicationById(2)
+		publicationLiked, _ := suite.publiRepo.GetPublicationById(2)
 
 		assert.NotNil(t, publicationLiked)
 		assert.NoError(t, err)
@@ -444,16 +444,16 @@ func (suite *PublicationsRepositorySuite) TestDeslikePublication() {
 	})
 
 	t.Run("Success on desliking the publication until the likes become 0 and ensure it doesnt go below that", func(t *testing.T) {
-		err := suite.publiRepo.LikePublication(2)
+		suite.publiRepo.LikePublication(2)
 
-		err = suite.publiRepo.LikePublication(2)
+		suite.publiRepo.LikePublication(2)
 
-		err = suite.publiRepo.DeslikePublication(2)
-		err = suite.publiRepo.DeslikePublication(2)
-		err = suite.publiRepo.DeslikePublication(2)
-		err = suite.publiRepo.DeslikePublication(2)
+		suite.publiRepo.DeslikePublication(2)
+		suite.publiRepo.DeslikePublication(2)
+		suite.publiRepo.DeslikePublication(2)
+		err := suite.publiRepo.DeslikePublication(2)
 
-		publicationLiked, err := suite.publiRepo.GetPublicationById(2)
+		publicationLiked, _ := suite.publiRepo.GetPublicationById(2)
 
 		assert.NotNil(t, publicationLiked)
 		assert.NoError(t, err)

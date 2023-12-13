@@ -5,7 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -120,8 +120,8 @@ func (suite *UserRepositorySuite) TestCreate() {
 
 		assert.NotNil(t, userID)
 		assert.NoError(t, err)
-		assert.IsType(t, uint64(3), userID)
-		assert.Equal(t, uint64(3), userID)
+		assert.IsType(t, uint64(4), userID)
+		assert.Equal(t, uint64(4), userID)
 	})
 
 	t.Run("Fails when user.Nick already exists", func(t *testing.T) {
@@ -225,7 +225,7 @@ func (suite *UserRepositorySuite) TestGetAll() {
 		assert.NotNil(t, users)
 		assert.NoError(t, err)
 		assert.IsType(t, []models.User{}, users)
-		assert.Len(t, users, 2)
+		assert.Len(t, users, 3)
 	})
 
 	t.Run("Success with name filter", func(t *testing.T) {
@@ -272,12 +272,12 @@ func (suite *UserRepositorySuite) TestGetById() {
 	})
 
 	t.Run("Fails", func(t *testing.T) {
-		user, err := suite.userRepo.GetById(3)
+		user, err := suite.userRepo.GetById(4)
 
 		assert.NotNil(t, err)
-		assert.Error(t, err, "no user found with ID: 3")
+		assert.Error(t, err, "no user found with ID: 4")
 		assert.IsType(t, models.User{}, user)
-		assert.Equal(t, fmt.Errorf("no user found with ID: %d", 3), err)
+		assert.Equal(t, fmt.Errorf("no user found with ID: %d", 4), err)
 	})
 }
 
@@ -295,7 +295,7 @@ func (suite *UserRepositorySuite) TestUpdate() {
 		assert.Nil(t, err)
 		assert.NoError(t, err)
 
-		userUpdated, err := suite.userRepo.GetById(1)
+		userUpdated, _ := suite.userRepo.GetById(1)
 
 		assert.IsType(t, models.User{}, userUpdated)
 		assert.Exactly(t, userUpdated, models.User{
@@ -361,7 +361,7 @@ func (suite *UserRepositorySuite) TestFollowUser() {
 	t.Run("Success", func(t *testing.T) {
 		err := suite.userRepo.Follow(2, 1)
 
-		user, err := suite.userRepo.GetFollowers(1)
+		user, _ := suite.userRepo.GetFollowers(1)
 
 		assert.Nil(t, err)
 		assert.NoError(t, err)
@@ -383,7 +383,7 @@ func (suite *UserRepositorySuite) TestUnfollowUser() {
 
 		err2 := suite.userRepo.Unfollow(2, 1)
 
-		user, err := suite.userRepo.GetFollowers(1)
+		user, _ := suite.userRepo.GetFollowers(1)
 
 		assert.Nil(t, err2, err)
 		assert.NoError(t, err2, err)
@@ -396,7 +396,7 @@ func (suite *UserRepositorySuite) TestGetFollowers() {
 	t.Run("Success", func(t *testing.T) {
 		err := suite.userRepo.Follow(2, 1)
 
-		user, err := suite.userRepo.GetFollowers(1)
+		user, _ := suite.userRepo.GetFollowers(1)
 
 		assert.Nil(t, err)
 		assert.NoError(t, err)
@@ -425,7 +425,7 @@ func (suite *UserRepositorySuite) TestGetFollowing() {
 	t.Run("Success", func(t *testing.T) {
 		err := suite.userRepo.Follow(2, 1)
 
-		user, err := suite.userRepo.GetFollowing(2)
+		user, _ := suite.userRepo.GetFollowing(2)
 		assert.Nil(t, err)
 		assert.NoError(t, err)
 		assert.IsType(t, []models.User{}, user)
@@ -476,7 +476,7 @@ func (suite *UserRepositorySuite) TestChangePassword() {
 		assert.Nil(t, err)
 		assert.NoError(t, err)
 
-		password, err := suite.userRepo.GetPasswordFromDb(1)
+		password, _ := suite.userRepo.GetPasswordFromDb(1)
 
 		assert.Equal(t, "passwordChanged", password)
 	})
@@ -495,7 +495,7 @@ func (suite *UserRepositorySuite) SeedDatabase() error {
 	fmt.Println("Seeding database...")
 	insertDataScriptPath := filepath.Join("..", "..", "sql", "insert_data.sql")
 
-	insertDataScript, err := ioutil.ReadFile(insertDataScriptPath)
+	insertDataScript, err := os.ReadFile(insertDataScriptPath)
 	if err != nil {
 		suite.T().Errorf("Erro ao ler script de inserção de dados: %v", err)
 		return err
