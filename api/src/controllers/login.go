@@ -16,7 +16,7 @@ import (
 	"strconv"
 )
 
-func init () {
+func init() {
 	config.Load()
 }
 
@@ -37,7 +37,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	repository := repositories.NewUsersRepository(db)
 	// a unica diferença desse método post é que precisamos buscar o usuario no db pelo email e, se encontrar, comparar a senha fornecida pelo usuario com a senha hasheada no db, para, se estiver tudo ok, retornar um token de acesso.
-	userFromDB , erro := repository.GetByEmail(user.Email)
+	userFromDB, erro := repository.GetByEmail(user.Email)
 	if erro != nil {
 		responses.Erro(w, http.StatusInternalServerError, erro)
 		return
