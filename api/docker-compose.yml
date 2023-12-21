@@ -4,7 +4,8 @@ services:
   mysql:
     container_name: mysql
     image: "mysql:5.7"
-    env_file: .env
+    env_file: 
+        - .env
     environment:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
@@ -20,7 +21,8 @@ services:
   devbook:
     container_name: devbook
     image: devbook
-    env_file: .env
+    env_file: 
+        - .env
     environment:
       API_PORT: ${API_PORT}
     ports:
