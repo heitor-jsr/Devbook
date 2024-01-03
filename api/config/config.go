@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -20,7 +21,23 @@ var (
 // vai carregar as variaveis de ambiente dentro da nossa aplicação. não recebe e nem retorna parametros. ela só vai alterar as variaveis de ambiente criadas antes dela, que vão estar disponíveis para a api toda. basicamente, a função abaixo vai só jogar valores dentro das variaveis de ambiente.
 func Load() {
 	var err error
-	envPath := "/home/dornzak/devbook/api/.env"
+	possiblePaths := []string{
+		".env",
+		filepath.Join("..", ".env"),
+		"/usr/src/devbook/api/.env",
+	}
+
+	var envPath string
+	for _, path := range possiblePaths {
+		if _, err := os.Stat(path); err == nil {
+			envPath = path
+			break
+		}
+	}
+
+	if envPath == "" {
+		log.Fatal("Arquivo .env não encontrado em nenhum dos caminhos fornecidos.")
+	}
 
 	// abaixo usamos uma função do pacote dotenv que vai ler as informações do arquivo .env e disponibilizar elas no nosso ambiente de desenvolvimento. se ocorrer algum erro, a execução do programa deve ser encerrada, e a API nem deve subir. por isso do log.fatal. quem chama isso é o package main. se tudo der certo, as informações do .env já estão disponíveis para serem usadas e podem ser inseridas nas variaveis inicializadas acima.
 	if err = godotenv.Load(envPath); err != nil {
@@ -32,7 +49,7 @@ func Load() {
 		Port = 9000
 	}
 
-	ConnStr = fmt.Sprintf("%s:%s@/%s?charset=utf8&parseTime=True&loc=Local",
+	ConnStr = fmt.Sprintf("%s:%s@tcp(mysql:3307)/%s?charset=utf8&parseTime=True&loc=Local",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),

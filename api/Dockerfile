@@ -1,10 +1,9 @@
 FROM golang:latest as builder
 
-WORKDIR /go/src/app
+WORKDIR /usr/src/devbook/api
 COPY . .
-
-RUN GOOS=linux CGO_ENABLED=0 go build -ldflags '-w -s' -o devbook .
-
+RUN GOOS=linux CGO_ENABLED=0 go build -ldflags '-w -s' -o api .
 FROM scratch
-COPY --from=builder /go/src/app/devbook .
-CMD ["./devbook"]
+COPY --from=builder /usr/src/devbook/api .
+
+CMD ["./api"]

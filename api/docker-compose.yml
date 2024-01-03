@@ -3,8 +3,7 @@ version: '3'
 services:
   mysql:
     container_name: mysql
-    image: "mysql:5.7"
-    env_file: .env
+    image: "mysql:8"
     environment:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
@@ -12,15 +11,15 @@ services:
         SECRET_KEY: ${SECRET_KEY}
         MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
-        - "3307:3306"
+        - "3307:3307"
     volumes:
+        - .docker/setup.sql:/docker-entrypoint-initdb.d/setup.sql
         - ./.dbdata:/var/lib/mysql:rw
     networks:
         - backend
-  devbook:
-    container_name: devbook
-    image: devbook
-    env_file: .env
+  api:
+    container_name: api
+    image: api
     environment:
       API_PORT: ${API_PORT}
     ports:
@@ -29,7 +28,8 @@ services:
     depends_on:
       - mysql
     volumes:
-      - .:/go/src/app
+      - .:/usr/src/devbook/api:rw
+    restart: always
     networks:
       - backend
 

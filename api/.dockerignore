@@ -1,0 +1,6 @@
+.git
+.github
+.vscode
+.dbdata
+docker-compose.yml
+Dockerfile
